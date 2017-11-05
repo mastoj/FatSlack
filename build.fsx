@@ -6,6 +6,7 @@
 
 open Fake
 open Fake.AssemblyInfoFile
+open Fake.Git
 open Fake.ReleaseNotesHelper
 open System
 
@@ -21,7 +22,10 @@ let project = "FatSlack"
 let summary = "Slack bot/app framework in F# for F#"
 let configuration = "Release"
 let release = LoadReleaseNotes "RELEASE_NOTES.md"
-
+let gitOwner = "mastoj"
+let gitName = project
+let gitUrl = "https://github.com"
+let gitHome = sprintf "%s/%s" gitUrl gitOwner
 // --------------------------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------------------------
@@ -110,7 +114,48 @@ Target "NuGet" (fun _ ->
             ReleaseNotes = toLines release.Notes})
 )
 
+Target "PublishNuget" (fun _ ->
+    Paket.Push(fun p ->
+        { p with
+            PublishUrl = "https://www.nuget.org"
+            WorkingDir = "./temp" })
+)
+
+#load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+open Octokit
+
+Target "Release" (fun _ ->
+    let user =
+        match getBuildParam "github-user" with
+        | s when not (String.IsNullOrWhiteSpace s) -> s
+        | _ -> getUserInput "Username: "
+    let pw =
+        match getBuildParam "github-pw" with
+        | s when not (String.IsNullOrWhiteSpace s) -> s
+        | _ -> getUserPassword "Password: "
+    let remote =
+        Git.CommandHelper.getGitResult "" "remote -v"
+        |> Seq.filter (fun (s: string) -> s.EndsWith("(push)"))
+        |> Seq.tryFind (fun (s: string) -> s.Contains(gitOwner + "/" + gitName))
+        |> function None -> gitHome + "/" + gitName | Some (s: string) -> s.Split().[0]
+
+    StageAll ""
+    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
+    Branches.pushBranch "" remote (Information.getBranchName "")
+
+    Branches.tag "" release.NugetVersion
+    Branches.pushTag "" remote release.NugetVersion
+
+    // release on github
+    createClient user pw
+    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
+    // TODO: |> uploadFile "PATH_TO_FILE"
+    |> releaseDraft
+    |> Async.RunSynchronously
+)
+
 Target "All" DoNothing
+Target "BuildPackage" DoNothing
 
 // --------------------------------------------------------------------------------------
 // Build order
@@ -122,6 +167,11 @@ Target "All" DoNothing
     ==> "Restore"
     ==> "Build"
     ==> "NuGet"
+    ==> "BuildPackage"
     ==> "All"
+
+"BuildPackage"
+  ==> "PublishNuget"
+  ==> "Release"
 
 RunTargetOrDefault "All"
