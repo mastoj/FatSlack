@@ -26,6 +26,7 @@ let gitOwner = "mastoj"
 let gitName = project
 let gitUrl = "https://github.com"
 let gitHome = sprintf "%s/%s" gitUrl gitOwner
+let outputDir = "./.temp"
 // --------------------------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------------------------
@@ -82,7 +83,7 @@ Target "AssemblyInfo" (fun _ ->
 )
 
 Target "Clean" (fun _ ->
-    CleanDirs [buildDir]
+    CleanDirs [buildDir; outputDir]
 )
 
 Target "InstallDotNetCLI" (fun _ ->
@@ -109,7 +110,7 @@ Target "Build" (fun _ ->
 Target "NuGet" (fun _ ->
     Paket.Pack(fun p ->
         { p with
-            OutputPath = "./temp"
+            OutputPath = outputDir
             Version = release.NugetVersion
             ReleaseNotes = toLines release.Notes})
 )
@@ -118,7 +119,7 @@ Target "PublishNuget" (fun _ ->
     Paket.Push(fun p ->
         { p with
             PublishUrl = "https://www.nuget.org"
-            WorkingDir = "./temp" })
+            WorkingDir = outputDir })
 )
 
 #load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
@@ -147,11 +148,11 @@ Target "Release" (fun _ ->
     Branches.pushTag "" remote release.NugetVersion
 
     // release on github
-    createClient user pw
-    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
-    // TODO: |> uploadFile "PATH_TO_FILE"
-    |> releaseDraft
-    |> Async.RunSynchronously
+    // createClient user pw
+    // |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
+    // // TODO: |> uploadFile "PATH_TO_FILE"
+    // |> releaseDraft
+    // |> Async.RunSynchronously
 )
 
 Target "All" DoNothing
@@ -162,7 +163,7 @@ Target "BuildPackage" DoNothing
 // --------------------------------------------------------------------------------------
 
 "AssemblyInfo"
-    ==>"Clean"
+    ==> "Clean"
     ==> "InstallDotNetCLI"
     ==> "Restore"
     ==> "Build"

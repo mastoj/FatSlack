@@ -1,6 +1,8 @@
 NUGET
   remote: https://www.nuget.org/api/v2
     FAKE (4.63.2)
+    FatSlack.Core (0.0.1-beta)
+      Newtonsoft.Json
     FSharp.Core (4.2.3)
       System.Collections (>= 4.0.11) - restriction: && (< net45) (>= netstandard1.6)
       System.Console (>= 4.0) - restriction: && (< net45) (>= netstandard1.6)
