@@ -4,5 +4,6 @@ nuget FAKE
 nuget FSharp.Core
 nuget Newtonsoft.Json
 nuget FatSlack.Core
+nuget Suave
 
 github fsharp/FAKE modules/Octokit/Octokit.fsx
