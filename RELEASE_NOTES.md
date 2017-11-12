@@ -1,3 +1,6 @@
+#### 0.0.4-beta - November 5 2017
+* Type clean up
+
 #### 0.0.3-beta - November 5 2017
 * Add FatSlack.App
 
