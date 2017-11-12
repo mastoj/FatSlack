@@ -1,39 +1,40 @@
 module FatSlack.Core.Types
 open System.Text.RegularExpressions
 
-type Channel = string
-type Sender = string
+type Team = 
+    {
+        Id: string
+        Name: string
+        Domain: string
+    }
 
 
-type Team = {
-    Id: string
-    Name: string
-    Domain: string
-}
-
-type SlackUser = {
-    Id: string
-    Name: string
-}
+type Channel = 
+    {
+        Id: string
+        Name: string
+    }
 
 
-module Events = 
+type SlackUser = 
+    {
+        Id: string
+        Name: string
+    }
 
-    type MessageEvent = 
-        {
-            Type: string
-            Channel: string
-            User: string
-            Text: string
-            Ts: string
-            Source_team: string
-            Team: string
-        }
+type MessageEvent = 
+    {
+        Type: string
+        Channel: string
+        User: string
+        Text: string
+        Ts: string
+        Source_team: string
+        Team: string
+    }
 
-    type SlackEvent = 
-        | MessageEvent of MessageEvent
-
-open Events
+type SlackEvent = 
+    | MessageEvent of MessageEvent
 
 type Action = 
     {
@@ -91,28 +92,23 @@ type Attachment =
         static member withColor color this = { this with Color = color }
         static member withTitle title this = { this with Title = title }
 
-type Message = {
-    Type: string
-    Channel: Channel
-    Text: string
-    Attachments: Attachment list
-} with 
-    static member create channel text = 
-        {
-            Type = "message"
-            Channel = channel
-            Text = text
-            Attachments = []
-        }
-    static member withAttachment attachment this = { this with Attachments = attachment :: this.Attachments}
+type Message = 
+    {
+        Type: string
+        Channel: string
+        Text: string
+        Attachments: Attachment list
+    } with 
+        static member create channelName text = 
+            {
+                Type = "message"
+                Channel = channelName
+                Text = text
+                Attachments = []
+            }
+        static member withAttachment attachment this = { this with Attachments = attachment :: this.Attachments}
 
 type MessageSender = Message -> unit
-
-type Command = 
-    {
-        Name: string
-        ArgumentString: string
-    }
 
 type EventParser = 
     | SimpleEventParser of string
@@ -166,33 +162,27 @@ type ListenerDefinition =
         static member createRegexListener handler parser = 
             ListenerDefinition.createListener (RegexEventParser parser) (fun (RegexEventParseResult h) -> handler h)
 
-type BotConfiguration = {
-    Token: string
-    Alias: string option
-    Commands: CommandDefinition list
-    Listeners: ListenerDefinition list
-}
+type BotConfiguration = 
+    {
+        Token: string
+        Alias: string option
+        Commands: CommandDefinition list
+        Listeners: ListenerDefinition list
+    }
 
-type BotInformation = {
-    Configuration: BotConfiguration
-    Team: Team
-    User: SlackUser
-    WebSocketUrl: string
-}
+type BotInformation = 
+    {
+        Configuration: BotConfiguration
+        Team: Team
+        User: SlackUser
+        WebSocketUrl: string
+    }
 
-module SlackTypes = 
-
-    type Channel = 
-        {
-            Id: string
-            Name: string
-        }
-
-    type ActionRequest = 
-        {
-            Actions: Action list
-            Token: string
-            Channel: Channel
-            User: SlackUser
-            Original_message: Message
-        }
+type ActionRequest = 
+    {
+        Actions: Action list
+        Token: string
+        Channel: Channel
+        User: SlackUser
+        Original_message: Message
+    }
