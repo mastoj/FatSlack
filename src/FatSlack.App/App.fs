@@ -18,7 +18,7 @@ let getString rawForm =
 
 let validateToken verificationToken (actionReq: ActionRequest) = 
     match actionReq.Token with
-    | verificationToken -> Choice1Of2 actionReq
+    | x when x = verificationToken -> Choice1Of2 actionReq
     | _ -> Choice2Of2 "Invalid token"
 
 type ActionHandler = ActionRequest -> WebPart

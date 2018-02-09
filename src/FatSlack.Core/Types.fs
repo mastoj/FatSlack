@@ -43,20 +43,22 @@ type Action =
         Type: string
         Value: string
     }
-    with static member button name text value = 
-        {
-            Name = name
-            Text = text
-            Value = value
-            Type = "button"
-        }
+    with 
+        static member button name text value = 
+            {
+                Name = name
+                Text = text
+                Value = value
+                Type = "button"
+            }
 
 type Field = 
     {
         Title: string
         Value: string
         Short: bool
-    } with 
+    }
+    with 
         static member createField short title value = 
             {
                 Title = title
@@ -75,7 +77,8 @@ type Attachment =
         Actions: Action list
         Attachment_type: string
         Fields: Field list
-    } with
+    }
+    with
         static member create callbackId fallback = 
             { 
                 Title = ""
@@ -98,7 +101,8 @@ type Message =
         Channel: string
         Text: string
         Attachments: Attachment list
-    } with 
+    }
+    with 
         static member create channelName text = 
             {
                 Type = "message"

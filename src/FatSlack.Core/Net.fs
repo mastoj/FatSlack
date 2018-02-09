@@ -9,17 +9,18 @@ module Http =
     type Body = 
         | FormValues of FormValues
         | JsonData of string
-        with member this.toData =
-            match this with 
-            | FormValues values ->
-                let nameValueCollection = NameValueCollection()
-                values
-                |> List.fold (fun (nameValueCollection:NameValueCollection) (key, value) ->
-                        nameValueCollection.Add(key, value)
-                        nameValueCollection
-                    ) nameValueCollection
-                :> obj
-            | JsonData json -> json :> obj
+        with 
+            member this.toData =
+                match this with 
+                | FormValues values ->
+                    let nameValueCollection = NameValueCollection()
+                    values
+                    |> List.fold (fun (nameValueCollection:NameValueCollection) (key, value) ->
+                            nameValueCollection.Add(key, value)
+                            nameValueCollection
+                        ) nameValueCollection
+                    :> obj
+                | JsonData json -> json :> obj
 
     module ContentType = 
         let [<Literal>] Form = "application/x-www-form-urlencoded"
@@ -41,11 +42,6 @@ module Http =
 
     let getString (request:Request.GetRequest) =
         use webClient = new System.Net.WebClient()
-        printfn "==> REQUEST STARTED"
-        request.Headers
-        |> List.iter (printfn "%A")
-
-        printfn "Url: %s" request.Url
 
         request.Headers
         |> List.iter (fun (k,v) -> webClient.Headers.Add(k, v))
