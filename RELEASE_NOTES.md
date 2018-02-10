@@ -1,3 +1,7 @@
+#### 0.0.7-beta - February 10 2018
+
+* Update reference to FatSlack.Core
+
 #### 0.0.6-beta - February 9 2018
 
 * Not sure what is going in this release, but something is it
