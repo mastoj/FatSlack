@@ -142,7 +142,7 @@ let startListen botInfo =
     botAgent.Post(Connected socket)
     listen "" botAgent socket |> Async.Start
 
-let addHelpCommand config =
+let withHelpCommand config =
     let join separator (str:string list) = String.Join(separator, str)
     let messageText = config.Commands |> List.map (fun c -> c.Syntax) |> join "\n"
     let variableRegex = new Regex("(<.+?>)")
@@ -153,6 +153,5 @@ let addHelpCommand config =
 
 let start config = 
     config
-    |> addHelpCommand
     |> getBotInfo
     |> startListen
