@@ -1,3 +1,7 @@
+#### 0.0.8-beta - February 10 2018
+
+* Make help command optional
+
 #### 0.0.7-beta - February 10 2018
 
 * Update reference to FatSlack.Core

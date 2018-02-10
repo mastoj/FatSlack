@@ -5,8 +5,8 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("FatSlack.App")>]
 [<assembly: AssemblyProductAttribute("FatSlack")>]
 [<assembly: AssemblyDescriptionAttribute("Slack bot/app framework in F# for F#")>]
-[<assembly: AssemblyVersionAttribute("0.0.7")>]
-[<assembly: AssemblyFileVersionAttribute("0.0.7")>]
+[<assembly: AssemblyVersionAttribute("0.0.8")>]
+[<assembly: AssemblyFileVersionAttribute("0.0.8")>]
 [<assembly: AssemblyConfigurationAttribute("Release")>]
 do ()
 
@@ -14,6 +14,6 @@ module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "FatSlack.App"
     let [<Literal>] AssemblyProduct = "FatSlack"
     let [<Literal>] AssemblyDescription = "Slack bot/app framework in F# for F#"
-    let [<Literal>] AssemblyVersion = "0.0.7"
-    let [<Literal>] AssemblyFileVersion = "0.0.7"
+    let [<Literal>] AssemblyVersion = "0.0.8"
+    let [<Literal>] AssemblyFileVersion = "0.0.8"
     let [<Literal>] AssemblyConfiguration = "Release"
