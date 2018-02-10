@@ -6,11 +6,9 @@ open FatSlack.Core
 open FatSlack.Core.Net
 open FatSlack.Core.SlackApi
 open FatSlack.Core.Types
-open FatSlack.Core.Types.Events
 open System
 open System.Linq
 open System.Net.WebSockets
-open System.Threading
 open System.Text.RegularExpressions
 
 let init token = {
@@ -33,7 +31,7 @@ type ConnectResponse = {
     Self: SlackUser
 }
 
-let getBotInfo config = 
+let getBotInfo (config: BotConfiguration) = 
     sprintf "https://slack.com/api/rtm.connect?token=%s" config.Token
     |> Http.downloadJsonObject<ConnectResponse>
     |> (fun cr -> 

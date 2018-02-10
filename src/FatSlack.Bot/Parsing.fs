@@ -3,7 +3,6 @@ module FatSlack.Parsing
 open System
 open System.Text.RegularExpressions
 open FatSlack.Core.Types
-open FatSlack.Core.Types.Events
 
 module Events =
     type MessageType = 

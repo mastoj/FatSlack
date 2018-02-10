@@ -5,7 +5,6 @@ open Operators
 open Filters
 open FatSlack.Core
 open FatSlack.Core.Types
-open FatSlack.Core.Types.SlackTypes
 
 module Choice = 
     let handle<'a, 'b> okF failF choice = 
