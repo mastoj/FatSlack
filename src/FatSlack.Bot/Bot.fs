@@ -65,7 +65,7 @@ let handleEvent botInfo callback evt =
             with
             | ex -> 
                 printfn "%A" ex
-                callback(Message.create msgEvent.Channel "Failed to execute action, check log for errors")
+                callback(Message.createPostMessage msgEvent.Channel "Failed to execute action, check log for errors")
     }
 
 let agentHandler botInfo (inbox:Agent<AgentMessage>) =
@@ -82,7 +82,7 @@ let agentHandler botInfo (inbox:Agent<AgentMessage>) =
                     handleEvent botInfo (SendMessage >> inbox.Post) evt |> Async.Start
                     state
                 | SendMessage msg ->
-                    postMessage apiClient msg
+                    sendMessage apiClient msg
                     state
             return! loop state
         }
@@ -149,7 +149,7 @@ let withHelpCommand config =
     let quotedVariables = variableRegex.Replace(messageText, "`$1`")
 
     config
-        |> withCommand (CommandDefinition.createSimpleCommand (fun _ evt cb -> cb(Message.create evt.Channel quotedVariables)) "help" "help" "Returns a list of available commands")
+        |> withCommand (CommandDefinition.createSimpleCommand (fun _ evt cb -> cb(Message.createPostMessage evt.Channel quotedVariables)) "help" "help" "Returns a list of available commands")
 
 let start config = 
     config

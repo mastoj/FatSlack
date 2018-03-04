@@ -10,14 +10,29 @@ type ApiClient = {
 let createApiClient token = {
     Token = token
 }
-let postMessage client (msg:Message) =
-    let formValues = 
+
+let createBaseForm client (messageBaseData: MessageBaseData) =
         [
             "token", client.Token 
-            "channel", msg.Channel
-            "text", msg.Text
+            "channel", messageBaseData.Channel
+            "text", messageBaseData.Text
             "as_user", "true"
-            "attachments", (Json.serialize msg.Attachments)
+            "attachments", (Json.serialize messageBaseData.Attachments)
         ]
-    printfn "Posting to slack: %A" formValues
-    Http.post "https://slack.com/api/chat.postMessage" (Http.FormValues formValues)
+
+let sendMessage client (msg: Message) =
+    match msg with
+    | PostMessage pm ->
+        let fv =
+            pm.MessageBaseData 
+            |> createBaseForm client
+        fv, "https://slack.com/api/chat.postMessage"
+    | UpdateMessage um ->
+        let fv =
+            um.MessageBaseData 
+            |> createBaseForm client 
+            |> (fun fv -> ("ts", (um.Timestamp)) :: fv)
+        fv, "https://slack.com/api/chat.update"
+    |> (fun (fv, url) ->
+        printfn "Posting to slack: %A" fv
+        Http.post url (Http.FormValues fv))

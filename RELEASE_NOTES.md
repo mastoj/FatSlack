@@ -1,3 +1,11 @@
+#### 0.0.10-beta - February 10 2018
+
+* Update references
+
+#### 0.0.9-beta - February 10 2018
+
+* Add support for chat.update
+
 #### 0.0.8-beta - February 10 2018
 
 * Make help command optional

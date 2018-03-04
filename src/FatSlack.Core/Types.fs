@@ -95,22 +95,53 @@ type Attachment =
         static member withColor color this = { this with Color = color }
         static member withTitle title this = { this with Title = title }
 
-type Message = 
+type MessageBaseData =
     {
         Type: string
         Channel: string
         Text: string
         Attachments: Attachment list
     }
-    with 
-        static member create channelName text = 
+
+type PostMessage =
+    {
+        MessageBaseData: MessageBaseData
+    }
+
+type UpdateMessage =
+    {
+        MessageBaseData: MessageBaseData
+        Timestamp: string
+    }
+
+type Message =
+    | PostMessage of PostMessage
+    | UpdateMessage of UpdateMessage
+    with
+        static member createMessageBaseData channelName text =
             {
                 Type = "message"
                 Channel = channelName
                 Text = text
                 Attachments = []
             }
-        static member withAttachment attachment this = { this with Attachments = attachment :: this.Attachments}
+        static member createPostMessage channelName text =
+            Message.createMessageBaseData channelName text 
+            |> (fun mbd -> PostMessage { MessageBaseData = mbd }) 
+        static member createUpdateMessage channelName text ts =
+            Message.createMessageBaseData channelName text
+            |> (fun mbd -> UpdateMessage { MessageBaseData = mbd; Timestamp = ts })
+
+        static member withAttachment attachment this =
+            let updateBaseData baseData =
+                { baseData with Attachments = attachment :: baseData.Attachments }
+            match this with
+            | PostMessage pm -> 
+                let baseData = updateBaseData pm.MessageBaseData
+                PostMessage { pm with  MessageBaseData = baseData }
+            | UpdateMessage um ->
+                let baseData = updateBaseData um.MessageBaseData
+                UpdateMessage { um with  MessageBaseData = baseData }
 
 type MessageSender = Message -> unit
 
