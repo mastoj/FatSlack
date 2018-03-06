@@ -2,6 +2,7 @@ module FatSlack.Core.SlackApi
 
 open Net
 open Types
+open System
 
 type ApiClient = {
     Token: string
