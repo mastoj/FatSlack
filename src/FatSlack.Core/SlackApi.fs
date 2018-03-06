@@ -37,3 +37,13 @@ let sendMessage client (msg: Message) =
     |> (fun (fv, url) ->
         printfn "Posting to slack: %A" fv
         Http.post url (Http.FormValues fv))
+
+open FatSlack.Core.Api.Dto.Actions
+let send<'T> client (msg: Api.Dto.Actions.SlackAction<'T>) =
+    let toUrl = function
+        | PostMessage -> "https://slack.com/api/chat.postMessage"
+        | UpdateMessage -> "https://slack.com/api/chat.update"
+    match msg.Data with
+    | Dto data ->
+        let payload = Json.serialize data
+        Http.post (msg.Method |> toUrl) (Http.JsonData payload)
