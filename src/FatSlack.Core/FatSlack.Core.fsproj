@@ -1,10 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>FatSlack.Core</AssemblyName>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Errors.fs" />
     <Compile Include="Json.fs" />
+    <Compile Include="Domain.SimpleTypes.fs" />
+    <Compile Include="Domain.Types.fs" />
+    <Compile Include="Api.Dto.fs" />
     <Compile Include="Net.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="SlackApi.fs" />
