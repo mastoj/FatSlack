@@ -119,13 +119,13 @@ module Actions =
         | UpdateMessage
 
     type FormValues = (string * string) list
-    type SlackActionData<'T> =
+    type SlackActionData =
         | FormValues of FormValues
-        | Dto of 'T
+        | Dto of obj
 
-    type SlackAction<'T> = {
+    type SlackAction= {
         Method: Method
-        Data: SlackActionData<'T>
+        Data: SlackActionData
     }
 
     type Confirm = {
@@ -186,7 +186,7 @@ module Actions =
         Channel: string
         Text: string
         Icon_emoji: string
-        Attachment: Attachment
+        Attachments: Attachment[]
         Ts: string
     }
 
@@ -352,7 +352,7 @@ module Actions =
                 Channel = (postMessage.Channel |> ChannelId.toDto)
                 Text = (postMessage.Text |> Text.toDto)
                 Icon_emoji = (postMessage.IconEmoji |> IconEmoji.toDto)
-                Attachment = (postMessage.Attachment |> Attachment.toDto)
+                Attachments = (postMessage.Attachments |> List.map Attachment.toDto |> List.toArray)
                 Ts = null
             }
 
@@ -366,7 +366,7 @@ module Actions =
                 Channel = (message.Channel |> ChannelId.toDto)
                 Text = (message.Text |> Text.toDto)
                 Icon_emoji = (message.IconEmoji |> IconEmoji.toDto)
-                Attachment = (message.Attachment |> Attachment.toDto)
+                Attachments = (message.Attachments |> List.map Attachment.toDto |> List.toArray)
                 Ts = (message.Ts |> Ts.toDto)
             }
 

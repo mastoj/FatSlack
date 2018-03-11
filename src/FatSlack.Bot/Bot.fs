@@ -10,6 +10,7 @@ open System
 open System.Linq
 open System.Net.WebSockets
 open System.Text.RegularExpressions
+open FatSlack.Core.Domain.Types.Events
 
 let init token = {
     Token = token
@@ -53,17 +54,25 @@ type BotAgentState = {
     Socket: ClientWebSocket option
 }
 
-let handleEvent botInfo callback evt = 
+let handleEvent botInfo callback event = 
     async {
         try
-            let parseResult = Parsing.Events.parseEvent botInfo evt
+            let parseResult = Parsing.Events.parseEvent botInfo event
             printfn "Parsed event: %A" parseResult
             parseResult
-            |> Seq.iter (fun (evt, handler) -> handler evt evt callback)
+            |> Seq.iter (fun (evt, handler) -> handler evt event callback)
         with
         | ex -> 
             printfn "%A" ex
-            callback(Message.createPostMessage evt.Channel "Failed to execute action, check log for errors")
+            match event with
+            | Domain.Types.Events.Message (RegularMessage msg) ->
+                let reply = 
+                    Domain.Types.ActionMessage.postMessage 
+                        (msg.Channel)
+                        (Domain.SimpleTypes.Text "Failed to execute action, check log for errors")
+                Some reply
+            | _ -> None
+            |> Option.iter callback
     }
 
 // let agentHandler botInfo (inbox:Agent<AgentMessage>) =
@@ -106,20 +115,15 @@ let deserializeEvent (json:string) =
         Result.Error (Errors.Error.JsonError (x.ToString()))
 
 let startListen botInfo =
-    // let deserialize: WebSocket =
-    //     deserializeEvent
-//        >> Option.map (Api.Dto.Events.Message.toDomainType)
-    let botAgent = createBotAgent botInfo
-
-    let handleEvent (event: Domain.Types.Events.Event) =
-        EventReceived event |> botAgent.Post
+    let apiClient = { Token = botInfo.Configuration.Token }
+    let sendMessage = (Api.Dto.Actions.ActionMessage.toSlackAction botInfo.Configuration.Token) >> (send apiClient)
 
     let handle messageString =
         messageString
         |> deserializeEvent
         |> Result.bind (Api.Dto.Events.Message.toDomainType)
         |> Result.map (Domain.Types.Events.Event.Message)
-        |> Result.map handleEvent
+        |> Result.map (handleEvent botInfo sendMessage)
 
     let handleAsync messageString =
         async {
@@ -171,7 +175,7 @@ let withHelpCommand config =
     let quotedVariables = variableRegex.Replace(messageText, "`$1`")
 
     config
-        |> withCommand (CommandDefinition.createSimpleCommand (fun _ evt cb -> cb(Message.createPostMessage evt.Channel quotedVariables)) "help" "help" "Returns a list of available commands")
+        |> withCommand (CommandDefinition.createSimpleCommand (fun _ (Message (RegularMessage evt)) cb -> cb(Domain.Types.ActionMessage.postMessage evt.Channel (Domain.SimpleTypes.Text quotedVariables))) "help" "help" "Returns a list of available commands")
 
 let start config = 
     config
