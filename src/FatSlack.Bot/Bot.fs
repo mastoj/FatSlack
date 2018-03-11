@@ -46,8 +46,8 @@ type Agent<'a> = MailboxProcessor<'a>
 type AgentMessage = 
     | Connected of ClientWebSocket
     | Reconnected of ClientWebSocket
-    | EventReceived of SlackEvent
-    | SendMessage of Message
+    | EventReceived of Domain.Types.Events.Event
+    | SendMessage of (Api.Dto.Actions.Message)
 
 type BotAgentState = {
     Socket: ClientWebSocket option
@@ -55,92 +55,114 @@ type BotAgentState = {
 
 let handleEvent botInfo callback evt = 
     async {
-        match evt with
-        | MessageEvent msgEvent ->
-            try
-                let parseResult = Parsing.Events.parseEvent botInfo msgEvent
-                printfn "Parsed event: %A" parseResult
-                parseResult
-                |> Seq.iter (fun (evt, handler) -> handler evt msgEvent callback)
-            with
-            | ex -> 
-                printfn "%A" ex
-                callback(Message.createPostMessage msgEvent.Channel "Failed to execute action, check log for errors")
+        try
+            let parseResult = Parsing.Events.parseEvent botInfo evt
+            printfn "Parsed event: %A" parseResult
+            parseResult
+            |> Seq.iter (fun (evt, handler) -> handler evt evt callback)
+        with
+        | ex -> 
+            printfn "%A" ex
+            callback(Message.createPostMessage evt.Channel "Failed to execute action, check log for errors")
     }
 
-let agentHandler botInfo (inbox:Agent<AgentMessage>) =
-    let apiClient = { Token = botInfo.Configuration.Token }
-    let rec loop state = 
-        async {
-            let! msg = inbox.Receive()
-            let state = 
-                match msg with
-                | Connected socket
-                | Reconnected socket ->
-                    { Socket = Some socket }
-                | EventReceived evt ->
-                    handleEvent botInfo (SendMessage >> inbox.Post) evt |> Async.Start
-                    state
-                | SendMessage msg ->
-                    sendMessage apiClient msg
-                    state
-            return! loop state
-        }
-    loop { Socket = None }
+// let agentHandler botInfo (inbox:Agent<AgentMessage>) =
+//     let apiClient = { Token = botInfo.Configuration.Token }
+//     let rec loop state = 
+//         async {
+//             let! msg = inbox.Receive()
+//             let state = 
+//                 match msg with
+//                 | Connected socket
+//                 | Reconnected socket ->
+//                     { Socket = Some socket }
+//                 | EventReceived evt ->
+//                     handleEvent botInfo (SendMessage >> inbox.Post) evt |> Async.Start
+//                     state
+//                 | SendMessage msg ->
+//                     send apiClient msg
+//                     state
+//             return! loop state
+//         }
+//     loop { Socket = None }
 
-let createBotAgent botInfo = Agent.Start(agentHandler botInfo)
+// let createBotAgent botInfo = Agent.Start(agentHandler botInfo)
 
 let deserializeEvent (json:string) = 
     let jObject = JObject.Parse(json)
     try
-        if jObject.["type"] |> isNull then None
+        if jObject.["type"] |> isNull 
+        then Result.Error (Errors.Error.UnsupportedSlackEvent "null")
         else
             match jObject.["type"].ToString() with
             | "message" ->
-                MessageEvent (Json.deserialize<MessageEvent>(json))
-                |> Some
-            | _ -> 
-                None
+                (Json.deserialize<Api.Dto.Events.Message>(json))
+                |> Result.Ok
+            | x ->
+                Result.Error (Errors.Error.UnsupportedSlackEvent x)
     with
-    | x -> printfn "%A" x; None
+    | x -> 
+        printfn "%A" x
+        Result.Error (Errors.Error.JsonError (x.ToString()))
 
-let startListen botInfo = 
-    printfn "Start listening"
-    let receiveBytes = Array.zeroCreate<byte> 4096
-    let receiveBuffer = new ArraySegment<byte>(receiveBytes)
-    let rec listen data (botAgent:Agent<AgentMessage>) (socket:ClientWebSocket) = async {
-        if socket.State = WebSocketState.Open 
-        then
-            printfn "Waiting for message"
-            let! ct = Async.CancellationToken
-            let! message = socket.ReceiveAsync(receiveBuffer, ct) |> Async.AwaitTask
-            if message.MessageType = WebSocketMessageType.Close
-            then
-                let socket = WebSocket.connect botInfo.WebSocketUrl
-                botAgent.Post(Reconnected socket)
-                return! listen "" botAgent socket
-            else
-                let messageBytes = receiveBuffer.Skip(receiveBuffer.Offset).Take(message.Count).ToArray()
-                let messageString = data + System.Text.Encoding.UTF8.GetString(messageBytes)
-                if message.EndOfMessage
-                then
-                    let slackEvent = messageString |> deserializeEvent
-                    match slackEvent with
-                    | Some msg ->
-                        botAgent.Post(EventReceived msg)
-                    | None -> ()
-                    return! listen "" botAgent socket
-                else
-                    return! listen messageString botAgent socket
-        else
-            let socket = WebSocket.connect botInfo.WebSocketUrl
-            botAgent.Post(Reconnected socket)
-            return! listen "" botAgent socket
-    }
-    let socket = WebSocket.connect botInfo.WebSocketUrl
+let startListen botInfo =
+    // let deserialize: WebSocket =
+    //     deserializeEvent
+//        >> Option.map (Api.Dto.Events.Message.toDomainType)
     let botAgent = createBotAgent botInfo
-    botAgent.Post(Connected socket)
-    listen "" botAgent socket |> Async.Start
+
+    let handleEvent (event: Domain.Types.Events.Event) =
+        EventReceived event |> botAgent.Post
+
+    let handle messageString =
+        messageString
+        |> deserializeEvent
+        |> Result.bind (Api.Dto.Events.Message.toDomainType)
+        |> Result.map (Domain.Types.Events.Event.Message)
+        |> Result.map handleEvent
+
+    let handleAsync messageString =
+        async {
+            do handle messageString
+        }
+    WebSocket.connect handleAsync botInfo.WebSocketUrl
+
+    // printfn "Start listening"
+    // let receiveBytes = Array.zeroCreate<byte> 4096
+    // let receiveBuffer = new ArraySegment<byte>(receiveBytes)
+    // let rec listen data (botAgent:Agent<AgentMessage>) (socket:ClientWebSocket) = async {
+    //     if socket.State = WebSocketState.Open 
+    //     then
+    //         printfn "Waiting for message"
+    //         let! ct = Async.CancellationToken
+    //         let! message = socket.ReceiveAsync(receiveBuffer, ct) |> Async.AwaitTask
+    //         if message.MessageType = WebSocketMessageType.Close
+    //         then
+    //             let socket = WebSocket.connect botInfo.WebSocketUrl
+    //             botAgent.Post(Reconnected socket)
+    //             return! listen "" botAgent socket
+    //         else
+    //             let messageBytes = receiveBuffer.Skip(receiveBuffer.Offset).Take(message.Count).ToArray()
+    //             let messageString = data + System.Text.Encoding.UTF8.GetString(messageBytes)
+    //             if message.EndOfMessage
+    //             then
+    //                 let slackEvent = messageString |> deserializeEvent
+    //                 match slackEvent with
+    //                 | Some msg ->
+    //                     botAgent.Post(EventReceived msg)
+    //                 | None -> ()
+    //                 return! listen "" botAgent socket
+    //             else
+    //                 return! listen messageString botAgent socket
+    //     else
+    //         let socket = WebSocket.connect botInfo.WebSocketUrl
+    //         botAgent.Post(Reconnected socket)
+    //         return! listen "" botAgent socket
+    // }
+    // let socket = WebSocket.connect botInfo.WebSocketUrl
+    // let botAgent = createBotAgent botInfo
+    // botAgent.Post(Connected socket)
+    // listen "" botAgent socket |> Async.Start
 
 let withHelpCommand config =
     let join separator (str:string list) = String.Join(separator, str)

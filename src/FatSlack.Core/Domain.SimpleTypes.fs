@@ -1,10 +1,12 @@
 module FatSlack.Core.Domain.SimpleTypes
 
 type ChannelId = ChannelId of string
+    with member this.value = match this with ChannelId v -> v
 
 type UserId = UserId of string
 
 type Text = Text of string
+    with member this.value = match this with Text v -> v
 
 type Ts = Ts of string
 
@@ -27,3 +29,9 @@ type Fallback = Fallback of string
 type CallbackId = CallbackId of string
 
 type Emoji= Emoji of string
+
+module Text =
+    let value (Text v) = v
+
+module ChannelId =
+    let value (ChannelId v) = v

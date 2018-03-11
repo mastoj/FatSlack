@@ -2,7 +2,9 @@ module FatSlack.Parsing
 
 open System
 open System.Text.RegularExpressions
+open FatSlack.Core
 open FatSlack.Core.Types
+open FatSlack.Core.Domain.Types.Events
 
 module Events =
     type MessageType = 
@@ -12,7 +14,7 @@ module Events =
         | NotAddressedToBot
         | BotMessage
 
-    let isAdressedBot (botInfo: BotInformation) (message:MessageEvent) = 
+    let isAdressedBot (botInfo: BotInformation) (message: Domain.Types.Events.RegularMessage) = 
         let checkPattern text pattern = 
             let regexPattern = "^" + pattern
             let regex = Regex(regexPattern)
@@ -23,18 +25,17 @@ module Events =
             botInfo.Configuration.Alias
             |> Option.fold (fun patterns alias -> alias :: patterns) [idPattern]
         patternsToLookFor
-        |> List.exists (checkPattern message.Text)
+        |> List.exists (checkPattern message.Text.value)
 
-    let getMessageType (botInfo: BotInformation) (message:MessageEvent) =
-        if message.User = botInfo.User.Id
-        then BotMessage
-        else if String.IsNullOrWhiteSpace(message.Text) 
+    let getMessageType (botInfo: BotInformation) (msg: Domain.Types.Events.RegularMessage) =
+        let startsWith first (str: string) = str.StartsWith(first)
+        if String.IsNullOrWhiteSpace(msg.Text.value)
         then NotAddressedToBot
-        else if isAdressedBot botInfo message 
+        else if isAdressedBot botInfo msg 
         then Directed
-        else if message.Channel.StartsWith("D") 
+        else if msg.Channel.value |> startsWith "D"
         then DirectMessage 
-        else if message.Channel.StartsWith("G")
+        else if msg.Channel.value |> startsWith "G"
         then GroupMessage
         else NotAddressedToBot
 
@@ -75,24 +76,27 @@ module Events =
         |> Seq.map (doParse text)
         |> Seq.choose id
 
-    let parseEvent (botInfo: BotInformation) (message:MessageEvent) =
-        let messageType = getMessageType botInfo message
-        let matchingCommands = 
-            match messageType with
-            | BotMessage
-            | NotAddressedToBot -> None
-            | Directed ->
-                let (_, commandStr) = splitToFirstWordAndRest message.Text
-                if commandStr |> isNull then None else Some commandStr
-            | DirectMessage ->
-                if message.Text |> isNull then None else Some message.Text
-            | GroupMessage -> None
-            |> Option.fold (fun _ v -> findMatchingCommand botInfo.Configuration.Commands v) Seq.empty
+    let parseEvent (botInfo: BotInformation) (event:Domain.Types.Events.Event) =
+        match event with
+        | Domain.Types.Events.Message (Domain.Types.Events.RegularMessage message) ->
+            let messageType = getMessageType botInfo message
+            let matchingCommands = 
+                match messageType with
+                | BotMessage
+                | NotAddressedToBot -> None
+                | Directed ->
+                    let (_, commandStr) = splitToFirstWordAndRest (message.Text.value)
+                    if commandStr |> isNull then None else Some commandStr
+                | DirectMessage ->
+                    if message.Text.value |> isNull then None else Some (message.Text.value)
+                | GroupMessage -> None
+                |> Option.fold (fun _ v -> findMatchingCommand botInfo.Configuration.Commands v) Seq.empty
 
-        if matchingCommands |> Seq.isEmpty 
-        then
-            match messageType with
-            | BotMessage -> Seq.empty
-            | _ -> findMatchingListeners (botInfo.Configuration.Listeners) message.Text
-        else
-            matchingCommands
+            if matchingCommands |> Seq.isEmpty 
+            then
+                match messageType with
+                | BotMessage -> Seq.empty
+                | _ -> findMatchingListeners (botInfo.Configuration.Listeners) (message.Text.value)
+            else
+                matchingCommands
+        | _ -> Seq.empty

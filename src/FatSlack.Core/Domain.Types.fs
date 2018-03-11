@@ -130,3 +130,6 @@ module Actions =
     type ActionMessage =
         | PostMessage of PostMessage
         | UpdateMessage of UpdateMessage
+
+module Workflow =
+    type Handler = Events.Event -> Actions.ActionMessage
