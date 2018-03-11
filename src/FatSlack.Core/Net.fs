@@ -83,8 +83,41 @@ module Http =
 module WebSocket =
     open System
     open System.Net.WebSockets
+    open System.Linq
 
-    let connect url = 
+    type private WebSocketClient =
+        | Open of ClientWebSocket
+        | Connecting
+        | Aborted
+        | Closed
+        | CloseReceived
+        | CloseSent
+        | None
+
+    type HandleWebsocketMessage = string -> Async<unit>
+
+    let private listen (messageHandler: HandleWebsocketMessage) (socket: ClientWebSocket) =
+        let receiveBytes = Array.zeroCreate<byte> 4096
+        let receiveBuffer = new ArraySegment<byte>(receiveBytes)
+        let rec innerListen data =
+            async {
+                let! ct = Async.CancellationToken
+                let! message = socket.ReceiveAsync(receiveBuffer, ct) |> Async.AwaitTask
+
+                let messageBytes = receiveBuffer.Skip(receiveBuffer.Offset).Take(message.Count).ToArray()
+                let messageString = data + System.Text.Encoding.UTF8.GetString(messageBytes)
+                if message.EndOfMessage
+                then
+                    messageString
+                    |> messageHandler
+                    |> Async.Start
+                    return! innerListen ""
+                else
+                    return! innerListen messageString
+            }
+        innerListen "" |> Async.Start
+
+    let connect<'T> (messageHandler: HandleWebsocketMessage) url = 
         let rec innerConnect() =
             async {
                 printfn "Websocket connect"
@@ -100,7 +133,7 @@ module WebSocket =
                 match socket.State with
                 | WebSocketState.Open -> 
                     printfn "Websocket connection opened"
-                    return socket
+                    return listen messageHandler socket
                 | WebSocketState.Connecting ->
                     printfn "Websocket connecting"
                     do! Async.Sleep 10000
@@ -109,7 +142,8 @@ module WebSocket =
                 | WebSocketState.Closed
                 | WebSocketState.CloseReceived
                 | WebSocketState.CloseSent
-                | WebSocketState.None -> 
+                | WebSocketState.None
+                | _ ->
                     return! innerConnect()
             }
         innerConnect() |> Async.RunSynchronously

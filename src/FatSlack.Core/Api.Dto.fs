@@ -5,7 +5,6 @@ open FatSlack.Core.Domain
 open FatSlack.Core.Errors
 open FatSlack.Core.Domain.Types
 open FatSlack.Core.Domain.Types.Actions
-open Actions
 
 module Events =
     
