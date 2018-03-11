@@ -116,20 +116,30 @@ module Actions =
         Channel: ChannelId
         Text: Text
         IconEmoji: Emoji
-        Attachment: Attachment
+        Attachments: Attachment list
     }
 
     type UpdateMessage = {
         Channel: ChannelId
         Text: Text
         IconEmoji: Emoji
-        Attachment: Attachment
+        Attachments: Attachment list
         Ts: Ts
     }
 
     type ActionMessage =
         | PostMessage of PostMessage
         | UpdateMessage of UpdateMessage
+
+module ActionMessage =
+    open Actions
+    let postMessage channelId messageText =
+        PostMessage {
+            Channel = channelId
+            Text = messageText
+            IconEmoji = Emoji null
+            Attachments = []
+        }
 
 module Workflow =
     type Handler = Events.Event -> Actions.ActionMessage
