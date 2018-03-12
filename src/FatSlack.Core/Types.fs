@@ -1,6 +1,7 @@
 module FatSlack.Core.Types
 open FatSlack.Core
 open System.Text.RegularExpressions
+open FatSlack.Core.Domain.Types.Events
 
 type EventParser = 
     | SimpleEventParser of string
@@ -17,6 +18,15 @@ type EventParseResult =
 
 type EventHandler = EventParseResult -> Domain.Types.Events.Event -> (Domain.Types.Actions.ActionMessage -> unit) -> unit
 
+let createRegularHandler h : EventHandler =
+    fun eventParseResult event callback ->
+        match event with
+        | Domain.Types.Events.Message (RegularMessage m) ->
+            h eventParseResult m callback
+        | _ -> raise (exn "Should never get a non RegularMessage here")
+
+let createSimpleParser parser = SimpleEventParser parser
+
 type CommandDefinition = 
     {
         Syntax: string
@@ -32,6 +42,12 @@ type CommandDefinition =
                 EventParser = parser
                 EventHandler = handler
             }
+        static member createRegularHandler h : EventHandler =
+            fun eventParseResult event callback ->
+                match event with
+                | Domain.Types.Events.Message (RegularMessage m) ->
+                    h eventParseResult m callback
+                | _ -> raise (exn "Should never get a non RegularMessage here")
 
         static member createSimpleCommand handler parser = 
             CommandDefinition.createCommand (SimpleEventParser parser) (fun (SimpleEventParseResult h) -> handler h)

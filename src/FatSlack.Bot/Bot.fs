@@ -70,6 +70,8 @@ let handleEvent botInfo callback event =
                     Domain.Types.ActionMessage.postMessage 
                         (msg.Channel)
                         (Domain.SimpleTypes.Text "Failed to execute action, check log for errors")
+                        (Domain.SimpleTypes.Emoji "")
+                        []
                 Some reply
             | _ -> None
             |> Option.iter callback
@@ -174,8 +176,12 @@ let withHelpCommand config =
     let variableRegex = new Regex("(<.+?>)")
     let quotedVariables = variableRegex.Replace(messageText, "`$1`")
 
+    let handler _ (Message (RegularMessage evt)) callback =
+        callback(Domain.Types.ActionMessage.postMessage evt.Channel (Domain.SimpleTypes.Text quotedVariables) (Domain.SimpleTypes.Emoji "") [])
+
     config
-        |> withCommand (CommandDefinition.createSimpleCommand (fun _ (Message (RegularMessage evt)) cb -> cb(Domain.Types.ActionMessage.postMessage evt.Channel (Domain.SimpleTypes.Text quotedVariables))) "help" "help" "Returns a list of available commands")
+        |> withCommand (CommandDefinition.createSimpleCommand 
+            handler "help" "help" "Returns a list of available commands")
 
 let start config = 
     config
