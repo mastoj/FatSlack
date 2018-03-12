@@ -106,8 +106,8 @@ module Actions =
         Fallback: Fallback
         CallbackId: CallbackId
         Color: Color           // good, warning, danger, #439FE0
-        ImageUrl: Url
-        ThumbUrl: Url
+        ImageUrl: Url option
+        ThumbUrl: Url option
         Actions: Action list
         Fields: Field list
     }
@@ -133,13 +133,62 @@ module Actions =
 
 module ActionMessage =
     open Actions
-    let postMessage channelId messageText =
+    let postMessage channelId messageText emoji attachments =
         PostMessage {
             Channel = channelId
             Text = messageText
-            IconEmoji = Emoji null
-            Attachments = []
+            IconEmoji = emoji
+            Attachments = attachments
         }
 
 module Workflow =
     type Handler = Events.Event -> Actions.ActionMessage
+
+module Attachment =
+    open Actions
+
+    let create callbackId fallback =
+        {
+            Title = (Title "")
+            Fallback = fallback
+            CallbackId = callbackId
+            Color = Color.Custom ""           // good, warning, danger, #439FE0
+            ImageUrl = None
+            ThumbUrl = None
+            Actions = []
+            Fields = []
+        }
+    let withAction action attachment =
+        { attachment with Actions = action :: attachment.Actions}
+    let withColor color attachment =
+        { attachment with Color = color }
+    let withTitle title (attachment: Attachment) =
+        { attachment with Title = title}
+    let withFields fields attachment =
+        { attachment with Fields = fields }
+
+module Action =
+    open Actions
+    let createValueButton name text value =
+        ValueButton {
+            Name = Name name
+            Text = Text text
+            Value = Value value
+            Style = Default
+            Confirm = None
+        }
+
+module Field =
+    open Actions
+
+    let createShortField title value =
+        ShortField {
+            Title = Title title
+            Value = Value value
+        }
+
+    let createLongField title value =
+        LongField {
+            Title = Title title
+            Value = Value value
+        }

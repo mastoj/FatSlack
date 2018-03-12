@@ -339,8 +339,8 @@ module Actions =
                 Fallback = (attachment.Fallback |> Fallback.toDto)
                 Callback_id = (attachment.CallbackId |> CallbackId.toDto)
                 Color = (attachment.Color |> Color.toDto)
-                Image_url = (attachment.ImageUrl |> Url.toDto)
-                Thumb_url = (attachment.ThumbUrl |> Url.toDto)
+                Image_url = (attachment.ImageUrl |> Option.map Url.toDto |> Option.defaultValue "")
+                Thumb_url = (attachment.ThumbUrl |> Option.map Url.toDto |> Option.defaultValue "")
                 Actions = (attachment.Actions |> mapListToArray Action.toDto)
                 Fields = (attachment.Fields |> mapListToArray Field.toDto)
             }

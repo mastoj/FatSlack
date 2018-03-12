@@ -4,6 +4,7 @@ type ChannelId = ChannelId of string
     with member this.value = match this with ChannelId v -> v
 
 type UserId = UserId of string
+    with member this.value = match this with UserId v -> v
 
 type Text = Text of string
     with member this.value = match this with Text v -> v
