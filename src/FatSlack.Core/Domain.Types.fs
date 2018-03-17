@@ -2,7 +2,6 @@ module FatSlack.Core.Domain.Types
 open SimpleTypes
 
 module Events =
-
     type RegularMessage = {
         Channel: ChannelId
         User: UserId
