@@ -9,6 +9,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bot.Types.fs" />
+    <Compile Include="Bot.Functions.fs" />
     <Compile Include="Parsing.fs" />
     <Compile Include="Bot.fs" />
     <Compile Include="AssemblyInfo.fs" />
