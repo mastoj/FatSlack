@@ -2,9 +2,16 @@ module FatSlack.Bot.Functions
 open System
 open System.Text.RegularExpressions
 open Types
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
+open FatSlack.Core
 open FatSlack.Core.Domain.SimpleTypes
+open FatSlack.Core.Domain.Types
 open FatSlack.Core.Domain.Types.Events
 open FatSlack.Core.Domain.Types.Actions
+open FatSlack.Core.Api.Dto.Actions
+open FatSlack.Core.Net
+open FatSlack.Core.SlackApi
 
 let isAdressedBot alias (UserId botId) (message: RegularMessage) = 
     let checkPattern text pattern = 
@@ -19,7 +26,7 @@ let isAdressedBot alias (UserId botId) (message: RegularMessage) =
     patternsToLookFor
     |> List.exists (checkPattern message.Text.value)
 
-let getMessageType alias (UserId botId) (message: Message) =
+let getMessageType alias (UserId botId) (message: Events.Message) =
     match message with
     | BotMessage _ -> MessageType.BotMessage
     | RegularMessage m ->
@@ -41,7 +48,9 @@ module Async =
         async {
             let! stateSeq = state
             let! itemSeq = item
-            return (itemSeq |> Seq.append stateSeq)
+            let res = itemSeq |> Seq.append stateSeq
+            printfn "This is the sequences I'm returning: %A" res
+            return res
         }
 
     let emptyAsyncSeq<'T> : Async<'T seq> =
@@ -52,13 +61,86 @@ module Async =
 let eventHandler (commands: Command list): EventHandler =
     fun event ->
         commands 
-        |> List.map (fun c -> c.MatchEvent event)
-        |> List.choose id
-        |> Seq.collect (fun (handler, event) -> handler event)
+            |> List.map (fun c -> c.MatchEvent event)
+            |> List.choose id
+            |> Seq.map (fun (handler, event) -> printfn "Hello, here I am"; handler event)
+            |> Seq.fold Async.joinAsyncSeq Async.emptyAsyncSeq
 
-let executor : Executor =
-    fun eventHandler sendMessage event ->
-        event
-        |> eventHandler
-        |> Seq.map sendMessage
-        |> Seq.iter Async.Start
+let executor commands : Executor =
+    fun sendMessage event ->
+        let actionMessages =
+            event
+            |> eventHandler commands
+        let onOk x =
+            printfn "I deal with this: %A" x
+            x
+            |> Seq.iter (fun m -> m |> sendMessage |> Async.Start)
+            |> ignore
+        let onFail = printfn "Send message failed: %A"
+        let onCancel = printfn "Send message cancelled: %A"
+        Async.StartWithContinuations (actionMessages, onOk, onFail, onCancel)
+
+let connectBot: ConnectBot =
+    fun botConfig ->
+        sprintf "https://slack.com/api/rtm.connect?token=%s" botConfig.Token
+        |> Http.downloadJsonObject<ConnectResponse>
+        |> (fun cr -> 
+            {
+                Token = botConfig.Token
+                Alias = botConfig.Alias
+                Executor = executor botConfig.Commands
+                Team = cr.Team
+                User = cr.Self
+                WebSocketUrl = cr.Url
+            })
+
+let deserializeEvent (json:string) = 
+    let jObject = JObject.Parse(json)
+    try
+        if jObject.["type"] |> isNull 
+        then Result.Error (Errors.Error.UnsupportedSlackEvent "null")
+        else
+            match jObject.["type"].ToString() with
+            | "message" ->
+                (Json.deserialize<Api.Dto.Events.Message>(json))
+                |> Result.Ok
+            | x ->
+                Result.Error (Errors.Error.UnsupportedSlackEvent x)
+    with
+    | x -> 
+        printfn "%A" x
+        Result.Error (Errors.Error.JsonError (x.ToString()))
+
+
+let startListen: StartListen =
+    fun botSpec ->
+        let sendMessage = (fun m -> printfn "Sending: %A" m; m) >> (ActionMessage.toSlackAction botSpec.Token) >> send
+
+        let handle messageString =
+            messageString
+            |> deserializeEvent
+            |> Result.bind (Api.Dto.Events.Message.toDomainType)
+            |> Result.map (Domain.Types.Events.Event.Message)
+            |> Result.map (botSpec.Executor sendMessage)
+
+        let handleAsync messageString =
+            async {
+                do handle messageString
+            }
+        WebSocket.connect handleAsync botSpec.WebSocketUrl
+
+let init token = 
+    {
+        Token = token
+        Alias = None
+        Commands = []
+    }
+
+let withAlias alias botConfig : BotConfig = { botConfig with Alias = Some alias }
+
+let withCommand command botConfig = { botConfig with Commands = command :: botConfig.Commands}
+
+let start config = 
+    config
+    |> connectBot
+    |> startListen
