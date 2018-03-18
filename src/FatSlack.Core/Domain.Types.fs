@@ -140,9 +140,6 @@ module ActionMessage =
             Attachments = attachments
         }
 
-module Workflow =
-    type Handler = Events.Event -> Actions.ActionMessage
-
 module Attachment =
     open Actions
 

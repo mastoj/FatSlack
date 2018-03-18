@@ -13,7 +13,8 @@ let createApiClient token = {
 }
 
 open FatSlack.Core.Api.Dto.Actions
-let send client (msg: Api.Dto.Actions.SlackAction) =
+let send (msg: Api.Dto.Actions.SlackAction) =
+    printfn "send> Sending: %A" msg
     let toUrl = function
         | PostMessage -> "https://slack.com/api/chat.postMessage"
         | UpdateMessage -> "https://slack.com/api/chat.update"

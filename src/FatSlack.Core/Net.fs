@@ -72,12 +72,19 @@ module Http =
         |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
         webClient.UploadStringAsync(uri, data :?> string)
 
-    let post (url:string) body = 
-        use webClient = new System.Net.WebClient()
-        let contentType = ContentType.getContentType body
-        let data = body.toData
-        let uri = Uri(url)
-        webClient.UploadValuesAsync(uri, data :?> NameValueCollection)
+    let post (url:string) body =
+        async {
+            use webClient = new System.Net.WebClient()
+            let contentType = ContentType.getContentType body
+            let data = body.toData
+            let uri = Uri(url)
+            printfn "The data to be sent: %A" data
+            printfn "Content-Type: %A" contentType
+            printfn "Uri: %A" uri
+            [("Content-Type", contentType)]
+            |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
+            webClient.UploadStringAsync(uri, data :?> string)
+        }
 
 [<RequireQualifiedAccess>]
 module WebSocket =
@@ -108,6 +115,7 @@ module WebSocket =
                 let messageString = data + System.Text.Encoding.UTF8.GetString(messageBytes)
                 if message.EndOfMessage
                 then
+                    printfn "End of message :%A" messageString
                     messageString
                     |> messageHandler
                     |> Async.Start
