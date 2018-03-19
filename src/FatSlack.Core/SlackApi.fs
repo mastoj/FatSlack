@@ -13,7 +13,7 @@ let createApiClient token = {
 }
 
 open FatSlack.Core.Api.Dto.Actions
-let send (msg: Api.Dto.Actions.SlackAction) =
+let send (client: ApiClient) (msg: Api.Dto.Actions.SlackAction) =
     printfn "send> Sending: %A" msg
     let toUrl = function
         | PostMessage -> "https://slack.com/api/chat.postMessage"
@@ -21,4 +21,5 @@ let send (msg: Api.Dto.Actions.SlackAction) =
     match msg.Data with
     | Dto data ->
         let payload = Json.serialize data
-        Http.post (msg.Method |> toUrl) (Http.JsonData payload)
+        let authorizationHeader = sprintf "Bearer %s" client.Token
+        Http.postJson [("Authorization", authorizationHeader)] (msg.Method |> toUrl) (Http.JsonData payload)

@@ -182,7 +182,6 @@ module Actions =
     }
 
     type Message = {
-        Token: string
         Channel: string
         Text: string
         Icon_emoji: string
@@ -348,7 +347,6 @@ module Actions =
     module PostMessage =
         let toDto token (postMessage: Actions.PostMessage) =
             {
-                Token = token
                 Channel = (postMessage.Channel |> ChannelId.toDto)
                 Text = (postMessage.Text |> Text.toDto)
                 Icon_emoji = (postMessage.IconEmoji |> IconEmoji.toDto)
@@ -362,7 +360,6 @@ module Actions =
     module UpdateMessage =
         let toDto token (message: Actions.UpdateMessage) =
             {
-                Token = token
                 Channel = (message.Channel |> ChannelId.toDto)
                 Text = (message.Text |> Text.toDto)
                 Icon_emoji = (message.IconEmoji |> IconEmoji.toDto)

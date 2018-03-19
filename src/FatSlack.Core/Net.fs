@@ -64,13 +64,15 @@ module Http =
         webClient.UploadValuesAsync(uri, data :?> NameValueCollection)
 
     let postJson (headers:Request.Headers) (url:string) body =
-        use webClient = new System.Net.WebClient()
-        let contentType = ContentType.getContentType body
-        let data = body.toData
-        let uri = Uri(url)
-        ("Content-Type", contentType) :: headers
-        |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
-        webClient.UploadStringAsync(uri, data :?> string)
+        async {
+            use webClient = new System.Net.WebClient()
+            let contentType = ContentType.getContentType body
+            let data = body.toData
+            let uri = Uri(url)
+            ("Content-Type", contentType) :: headers
+            |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
+            webClient.UploadStringAsync(uri, data :?> string)
+        }
 
     let post (url:string) body =
         async {
