@@ -22,4 +22,11 @@ let send (client: ApiClient) (msg: Api.Dto.Actions.SlackAction) =
     | Dto data ->
         let payload = Json.serialize data
         let authorizationHeader = sprintf "Bearer %s" client.Token
-        Http.postJson [("Authorization", authorizationHeader)] (msg.Method |> toUrl) (Http.JsonData payload)
+        async {
+            let! response = Http.postJson [("Authorization", authorizationHeader)] (msg.Method |> toUrl) (Http.JsonData payload)
+            return 
+                response
+                |> (fun x -> printfn "Raw response: %A" x; x)
+                |> Json.deserialize<Api.Dto.Response.ResponseMessage>
+                |> Api.Dto.Response.ResponseMessage.toDomainType
+        }

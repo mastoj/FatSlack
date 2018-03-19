@@ -130,6 +130,14 @@ module Actions =
         | PostMessage of PostMessage
         | UpdateMessage of UpdateMessage
 
+    type ResponseMessage = {
+        Ok: bool
+        Channel: ChannelId
+        Ts: Ts
+        Message: UpdateMessage
+        Warning: string
+    }
+
 module ActionMessage =
     open Actions
     let postMessage channelId messageText emoji attachments =

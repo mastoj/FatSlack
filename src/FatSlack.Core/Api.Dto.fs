@@ -5,9 +5,15 @@ open FatSlack.Core.Domain
 open FatSlack.Core.Errors
 open FatSlack.Core.Domain.Types
 open FatSlack.Core.Domain.Types.Actions
+open FatSlack.Core.Domain.SimpleTypes
+
+[<AutoOpen>]
+module Helpers =
+    let emptyStringIfNull (str: string) =
+        if str |> isNull then "" else str
 
 module Events =
-    
+
     type ChannelId = string
     type UserId = string
     type BotId = string
@@ -76,8 +82,12 @@ module Events =
         let toDomainType text =
             text |> SimpleTypes.Url
 
+    module Emoji =
+        let toDomainType emoji = emoji |> SimpleTypes.Emoji
+
+
     module Message =
-        let toBotMessage messageDto =
+        let toBotMessage (messageDto: Message) =
             let toIconMap (iconDict: Dictionary<string, string>) =
                 if iconDict |> isNull then Map.empty
                 else
@@ -95,7 +105,7 @@ module Events =
                 Icons = toIconMap messageDto.Icons
             }
 
-        let toRegularMessage messageDto =
+        let toRegularMessage (messageDto: Message) =
             Types.Events.RegularMessage {
                 Channel = (messageDto.Channel |> ChannelId.toDomainType)
                 User = (messageDto.User |> UserId.toDomainType)
@@ -109,14 +119,19 @@ module Events =
             | "" | null -> toRegularMessage messageDto |> Result.Ok
             | _ -> Result.Error (SerializationError (sprintf "Unkown message: %A" messageDto))
 
+
 module Actions =
 
     let mapListToArray map list =
         list |> List.map map |> List.toArray
 
+    let mapArrayToList map array =
+        if array |> isNull then []
+        else array |> List.ofArray |> List.map map
+
     type Method =
-        | PostMessage
-        | UpdateMessage
+        | Post
+        | Update
 
     type FormValues = (string * string) list
     type SlackActionData =
@@ -194,18 +209,22 @@ module Actions =
 
     module Text =
         let toDto (SimpleTypes.Text value) = value
+        let toDomainType = emptyStringIfNull >> SimpleTypes.Text
 
     module IconEmoji =
         let toDto (SimpleTypes.Emoji value) = value
 
     module Title =
         let toDto (SimpleTypes.Title value) = value
+        let toDomainType = SimpleTypes.Title
 
     module Fallback =
         let toDto (SimpleTypes.Fallback value) = value
+        let toDomainType = emptyStringIfNull >> SimpleTypes.Fallback
 
     module CallbackId =
         let toDto (SimpleTypes.CallbackId value) = value
+        let toDomainType = emptyStringIfNull >> SimpleTypes.CallbackId
 
     module Color =
         let toDto (color: Actions.Color) =
@@ -215,29 +234,57 @@ module Actions =
             | Color.Danger -> "danger"
             | Custom hexString -> hexString
 
+        let toDomainType (color: string) =
+            if color |> isNull then Custom ""
+            else
+                match color with
+                | "good" -> Good
+                | "warning" -> Warning
+                | "danger" -> Color.Danger
+                | hexString -> Custom hexString
+
     module Url =
         let toDto (SimpleTypes.Url value) = value
+        let toDomainType = emptyStringIfNull >> SimpleTypes.Url
 
     module Name =
         let toDto (SimpleTypes.Name value) = value
+        let toDomainType = emptyStringIfNull >> SimpleTypes.Name
 
     module Value =
         let toDto (SimpleTypes.Value value) = value
+        let toDomainType = emptyStringIfNull >> SimpleTypes.Value
 
     module Confirm =
-        let toDto (confirm: Types.Actions.Confirm) =
+        let toDto (confirm: Actions.Confirm) =
             {
-                Title = (confirm.Text |> Text.toDto)
-                Text = (confirm.Title |> Title.toDto)
+                Title = (confirm.Title |> Title.toDto)
+                Text = (confirm.Text |> Text.toDto)
                 Ok_text = (confirm.OkText |> Text.toDto)
                 Dismiss_text = (confirm.DismissText |> Text.toDto)
             }
+
+        let toDomainType (confirm: Confirm) =
+            {
+                Text = (confirm.Text |> Text.toDomainType)
+                Title = (confirm.Title |> Title.toDomainType)
+                OkText = (confirm.Ok_text |> Text.toDomainType)
+                DismissText = (confirm.Dismiss_text |> Text.toDomainType)
+            } : Actions.Confirm
+
     module Style =
         let toDto (style: Style) =
             match style with
             | Default -> "default"
             | Primary -> "primary"
             | Danger -> "danger"
+
+        let toDomainType (str: string) =
+            match str with
+            | "default" -> Default
+            | "primary" -> Primary
+            | "danger" -> Danger
+            | _ -> raise (exn "invalid style")
 
     module ValueButton =
         let toDto (valueButton: ValueButton) =
@@ -253,6 +300,22 @@ module Actions =
                     Value = (valueButton.Value |> Value.toDto)
                     Confirm = confirm
                     Style = (valueButton.Style |> Style.toDto)
+            }
+
+        let toDomainType (action: Action) =
+            let confirm =
+                if action.Confirm |> box |> isNull then None
+                else action.Confirm |> Confirm.toDomainType |> Some
+
+            let nullMap map o =
+                if o |> isNull then None
+                else o |> map |> Some
+            ValueButton {
+                Name = (action.Name |> Name.toDomainType)
+                Text = (action.Text |> Text.toDomainType)
+                Style = (action.Style |> Style.toDomainType)
+                Value = (action.Value |> Value.toDomainType)
+                Confirm = confirm
             }
 
     module LinkButton =
@@ -271,6 +334,22 @@ module Actions =
                     Style = (linkButton.Style |> Style.toDto)
             }
 
+        let toDomainType (action: Action) =
+            let confirm =
+                if action.Confirm |> box |> isNull then None
+                else action.Confirm |> Confirm.toDomainType |> Some
+
+            let nullMap map o =
+                if o |> isNull then None
+                else o |> map |> Some
+            LinkButton {
+                Name = (action.Name |> Name.toDomainType)
+                Text = (action.Text |> Text.toDomainType)
+                Url = (action.Url |> Url.toDomainType)
+                Style = (action.Style |> Style.toDomainType)
+                Confirm = confirm
+            }
+
     module DataSource =
         let toDto (ds: SelectedDataSource) =
             match ds with
@@ -278,6 +357,14 @@ module Actions =
             | Channel -> "channel"
             | Conversations -> "conversations"
             | External -> "external"
+
+        let toDomainType (selectedDataSourceStr: string) =
+            match selectedDataSourceStr with
+            | "users" -> Users
+            | "channel" -> Channel
+            | "conversations" -> Conversations
+            | "external" -> External
+            | _ -> raise (exn "Unknown datasource")
 
     module DataSourceSelect =
         let toDto (dsSelect: DataSourceSelect) =
@@ -289,12 +376,26 @@ module Actions =
                     Data_source = (dsSelect.DataSource |> DataSource.toDto)
             }
 
+        let toDomainType (action: Action) =
+            DataSourceSelect {
+                Name = (action.Name |> Name.toDomainType)
+                Text = (action.Text |> Text.toDomainType)
+                DataSource = (action.Data_source |> DataSource.toDomainType)
+            }
+
+
     module Option =
         let toDto (option: Types.Actions.Option) =
             {
                 Text = (option.Text |> Text.toDto)
                 Value = (option.Value |> Value.toDto)
             }
+
+        let toDomainType (option: Option) =
+            {
+                Text = (option.Text |> Text.toDomainType)
+                Value = (option.Value |> Value.toDomainType)
+            } : Actions.Option
 
     module OptionsSelect =
         let toDto (dsSelect: OptionsSelect) =
@@ -307,6 +408,14 @@ module Actions =
                     Selected_options = (dsSelect.SelectedOptions |> mapListToArray Option.toDto)
             }
 
+        let toDomainType (action: Action) =
+            OptionsSelect {
+                Name = (action.Name |> Name.toDomainType)
+                Text = (action.Text |> Text.toDomainType)
+                Options = (action.Options |> mapArrayToList Option.toDomainType)
+                SelectedOptions = (action.Selected_options |> mapArrayToList Option.toDomainType)
+            }
+
     module Action =
         let toDto (action: Actions.Action) =
             match action with
@@ -314,6 +423,20 @@ module Actions =
             | LinkButton linkButton -> LinkButton.toDto linkButton
             | DataSourceSelect dsSelect -> DataSourceSelect.toDto dsSelect
             | OptionsSelect optSelect -> OptionsSelect.toDto optSelect
+
+        let toDomainType (action: Action) =
+            let mapper =
+                match action.Type, action.Url, action.Data_source with
+                | "select", _, ds when ds |> isNull |> not && ds <> "" ->
+                    DataSourceSelect.toDomainType
+                | "select", _, _ ->
+                    OptionsSelect.toDomainType
+                | "button", url, _ when url |> isNull |> not && url <> "" ->
+                    LinkButton.toDomainType
+                | "button", _, _ ->
+                    ValueButton.toDomainType
+
+            action |> mapper
 
     module Field =
         let toDto (field: Types.Actions.Field) =
@@ -331,6 +454,18 @@ module Actions =
                     Short = false
                 }
 
+        let toDomainType (field: Field) =
+            let fieldData = 
+                {
+                    Title = (field.Title |> Title.toDomainType)
+                    Value = (field.Value |> Value.toDomainType)
+                } : FieldData
+            let fieldType =
+                match field.Short with
+                | true -> ShortField
+                | false -> LongField
+            fieldType fieldData
+
     module Attachment =
         let toDto (attachment: Actions.Attachment) =
             {
@@ -343,6 +478,22 @@ module Actions =
                 Actions = (attachment.Actions |> mapListToArray Action.toDto)
                 Fields = (attachment.Fields |> mapListToArray Field.toDto)
             }
+
+        let toDomainType (attachment: Attachment) =
+            let getNullUrl url =
+                if url |> isNull then None
+                else url |> Url.toDomainType |> Some
+            {
+                Title = (attachment.Title |> Title.toDomainType)
+                Fallback = (attachment.Fallback |> Fallback.toDomainType)
+                CallbackId = (attachment.Callback_id |> CallbackId.toDomainType)
+                Color = (attachment.Color |> Color.toDomainType)
+                ImageUrl = (attachment.Image_url |> getNullUrl)
+                ThumbUrl = (attachment.Thumb_url |> getNullUrl)
+                Actions = (attachment.Actions |> mapArrayToList Action.toDomainType)
+                Fields = (attachment.Fields |> mapArrayToList Field.toDomainType)
+            } : Actions.Attachment
+
 
     module PostMessage =
         let toDto token (postMessage: Actions.PostMessage) =
@@ -367,21 +518,54 @@ module Actions =
                 Ts = (message.Ts |> Ts.toDto)
             }
 
+        let toDomainType (dto: Message) =
+            let attachments = 
+                if dto.Attachments |> isNull then [] 
+                else dto.Attachments |> List.ofArray |> List.map Attachment.toDomainType
+            {
+                Channel = (Events.ChannelId.toDomainType dto.Channel)
+                Text = (Events.Text.toDomainType dto.Text)
+                IconEmoji = (Events.Emoji.toDomainType dto.Icon_emoji)
+                Attachments = attachments
+                Ts = (Events.Ts.toDomainType dto.Ts)
+            } : Actions.UpdateMessage
+
     module ActionMessage =
 
         let toSlackAction token (action: Actions.ActionMessage) =
             match action with
             | Actions.PostMessage msg -> 
-                let method = Method.PostMessage
+                let method = Method.Post
                 let data = Dto (PostMessage.toDto token msg)
                 {
                     Method = method
                     Data = data
                 }
             | Actions.UpdateMessage msg ->
-                let method = Method.UpdateMessage
+                let method = Method.Update
                 let data = Dto (UpdateMessage.toDto token msg)
                 {
                     Method = method
                     Data = data
                 }
+
+module Response =
+    type ResponseMessage = {
+        Ok: bool
+        Channel: Events.ChannelId
+        Ts: string
+        Message: Actions.Message
+        Warning: string
+    }
+
+
+    module ResponseMessage =
+        let toDomainType responseMessage =
+            let message = Actions.UpdateMessage.toDomainType responseMessage.Message
+            {
+                Ok = responseMessage.Ok
+                Channel = (Events.ChannelId.toDomainType responseMessage.Channel)
+                Ts = (Events.Ts.toDomainType responseMessage.Ts)
+                Message = message
+                Warning = responseMessage.Warning
+            } : Types.Actions.ResponseMessage

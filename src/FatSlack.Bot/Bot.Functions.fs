@@ -74,7 +74,12 @@ let executor commands : Executor =
         let onOk x =
             printfn "I deal with this: %A" x
             x
-            |> Seq.iter (fun m -> m |> sendMessage |> Async.Start)
+            |> Seq.iter (fun m -> 
+                async {
+                    let! res = m |> sendMessage
+                    printfn "Response from send %A" res
+                    return ()
+                } |> Async.Start)
             |> ignore
         let onFail = printfn "Send message failed: %A"
         let onCancel = printfn "Send message cancelled: %A"
