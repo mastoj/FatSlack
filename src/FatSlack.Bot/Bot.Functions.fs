@@ -114,7 +114,8 @@ let deserializeEvent (json:string) =
 
 let startListen: StartListen =
     fun botSpec ->
-        let sendMessage = (fun m -> printfn "Sending: %A" m; m) >> (ActionMessage.toSlackAction botSpec.Token) >> send
+        let client = createApiClient botSpec.Token
+        let sendMessage = (fun m -> printfn "Sending: %A" m; m) >> (ActionMessage.toSlackAction botSpec.Token) >> (send client)
 
         let handle messageString =
             messageString
