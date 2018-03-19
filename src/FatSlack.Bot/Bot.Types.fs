@@ -57,7 +57,7 @@ type ConnectResponse = {
     Self: SlackUser
 }
 
-type SendMessage = ActionMessage -> Async<unit>
+type SendMessage = ActionMessage -> Async<ResponseMessage>
 type Executor = SendMessage -> Event -> unit
 type BotSpecification = {
     Token: Token

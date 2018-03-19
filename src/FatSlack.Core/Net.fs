@@ -69,9 +69,12 @@ module Http =
             let contentType = ContentType.getContentType body
             let data = body.toData
             let uri = Uri(url)
-            ("Content-Type", contentType) :: headers
-            |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
-            webClient.UploadStringAsync(uri, data :?> string)
+            let! result =
+                ("Content-Type", contentType) :: headers
+                |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
+                webClient.UploadStringTaskAsync(uri, data :?> string)
+                |> Async.AwaitTask
+            return result
         }
 
     let post (url:string) body =
