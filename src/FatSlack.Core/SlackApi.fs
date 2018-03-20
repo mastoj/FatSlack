@@ -16,8 +16,8 @@ open FatSlack.Core.Api.Dto.Actions
 let send (client: ApiClient) (msg: Api.Dto.Actions.SlackAction) =
     printfn "send> Sending: %A" msg
     let toUrl = function
-        | PostMessage -> "https://slack.com/api/chat.postMessage"
-        | UpdateMessage -> "https://slack.com/api/chat.update"
+        | Post -> "https://slack.com/api/chat.postMessage"
+        | Update -> "https://slack.com/api/chat.update"
     match msg.Data with
     | Dto data ->
         let payload = Json.serialize data

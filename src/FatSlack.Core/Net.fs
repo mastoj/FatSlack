@@ -69,6 +69,9 @@ module Http =
             let contentType = ContentType.getContentType body
             let data = body.toData
             let uri = Uri(url)
+            printfn "The data to be sent: %A" data
+            printfn "Content-Type: %A" contentType
+            printfn "Uri: %A" uri
             let! result =
                 ("Content-Type", contentType) :: headers
                 |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
