@@ -12,8 +12,9 @@ type MessageType =
     | NotAddressedToBot
     | BotMessage
 
+type SendMessage = ActionMessage -> Async<ResponseMessage>
 type EventMatcher = Event -> Event option
-type EventHandler = Event -> Async<ActionMessage seq>
+type EventHandler = SendMessage -> Event -> Async<unit>
 type ActiveCommand = {
     Syntax: string
     Description: string
@@ -57,7 +58,6 @@ type ConnectResponse = {
     Self: SlackUser
 }
 
-type SendMessage = ActionMessage -> Async<ResponseMessage>
 type Executor = SendMessage -> Event -> unit
 type BotSpecification = {
     Token: Token

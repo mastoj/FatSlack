@@ -148,6 +148,16 @@ module ActionMessage =
             Attachments = attachments
         }
 
+    let updateMessage ts channelId messageText emoji attachments =
+        UpdateMessage {
+            Channel = channelId
+            Text = messageText
+            IconEmoji = emoji
+            Attachments = attachments
+            Ts = ts
+        }
+
+
 module Attachment =
     open Actions
 
