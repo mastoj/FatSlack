@@ -2,7 +2,7 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyTitleAttribute("FatSlack.Core")>]
+[<assembly: AssemblyTitleAttribute("FatSlack")>]
 [<assembly: AssemblyProductAttribute("FatSlack")>]
 [<assembly: AssemblyDescriptionAttribute("Slack bot/app framework in F# for F#")>]
 [<assembly: AssemblyVersionAttribute("0.0.11")>]
@@ -11,7 +11,7 @@ open System.Reflection
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyTitle = "FatSlack.Core"
+    let [<Literal>] AssemblyTitle = "FatSlack"
     let [<Literal>] AssemblyProduct = "FatSlack"
     let [<Literal>] AssemblyDescription = "Slack bot/app framework in F# for F#"
     let [<Literal>] AssemblyVersion = "0.0.11"

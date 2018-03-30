@@ -1,4 +1,4 @@
-module FatSlack.Core.Domain.Types
+module FatSlack.Domain.Types
 open SimpleTypes
 
 module Events =

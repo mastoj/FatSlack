@@ -1,16 +1,28 @@
-namespace FatSlack.Bot
+module FatSlack.Bot
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
-open FatSlack.Core
-open FatSlack.Core.Net
-open FatSlack.Core.SlackApi
-open FatSlack.Core.Types
-open System
-open System.Linq
-open System.Net.WebSockets
-open System.Text.RegularExpressions
-open FatSlack.Core.Domain.Types.Events
+open Types
+open Net
+open Suave
+
+type ConnectResponse = 
+    {
+        Ok: bool 
+        Url: Url
+        Team: Team
+        Self: User
+    }
+
+type BotConfiguration =
+    {
+        Token: string
+    }
+
+let init token =
+    {
+        Token = token
+    }
 
 // let init token = {
 //     Token = token
@@ -25,23 +37,10 @@ open FatSlack.Core.Domain.Types.Events
 
 // let withListener listener config = { config with Listeners = listener :: config.Listeners}
 
-// type ConnectResponse = {
-//     Ok: bool 
-//     Url: string
-//     Team: Team
-//     Self: SlackUser
-// }
 
-// let getBotInfo (config: BotConfiguration) =
-//     sprintf "https://slack.com/api/rtm.connect?token=%s" config.Token
-//     |> Http.downloadJsonObject<ConnectResponse>
-//     |> (fun cr -> 
-//         {
-//             Configuration = config
-//             Team = cr.Team
-//             User = cr.Self
-//             WebSocketUrl = cr.Url
-//         })
+let getBotInfo token =
+    sprintf "https://slack.com/api/rtm.connect?token=%s" token
+    |> Http.downloadJsonObject<ConnectResponse>
 
 // type Agent<'a> = MailboxProcessor<'a>
 // type AgentMessage = 
@@ -116,6 +115,32 @@ open FatSlack.Core.Domain.Types.Events
 //         printfn "%A" x
 //         Result.Error (Errors.Error.JsonError (x.ToString()))
 
+let startListen config connectResponse slackApi =
+    let deserializeEvent = Json.deserialize<Event>
+    let handleEvent (evt: Event) =
+        if evt.Text = "1337"
+        then
+            async {
+                let postMessage = { evt with Text = "Posting 133337" }
+                let! responseMessage = slackApi.PostMessage postMessage
+                do! Async.Sleep 3000
+                let updateMessage = { responseMessage.Message with Text = "Updating 133337"; Channel = responseMessage.Channel }
+                do! slackApi.UpdateMessage updateMessage |> Async.Ignore
+            } |> Async.RunSynchronously
+
+    let handleSocketMessage messageString =
+        messageString
+        |> deserializeEvent
+        |> handleEvent
+
+    let handleAsyncMessageString messageString =
+        async {
+            do handleSocketMessage messageString
+        }
+
+    WebSocket.connect handleAsyncMessageString connectResponse.Url
+    ()
+
 // let startListen botInfo =
 //     let apiClient = { Token = botInfo.Configuration.Token }
 //     let sendMessage = (Api.Dto.Actions.ActionMessage.toSlackAction botInfo.Configuration.Token) >> (send apiClient)
@@ -184,7 +209,11 @@ open FatSlack.Core.Domain.Types.Events
 //             handler "help" "help" "Returns a list of available commands")
 
 //open Bot.Functions
-// let start config = 
-//     config
-//     |> connectBot
+let start config =
+    let connectResponse = getBotInfo config.Token
+    let slackApi = SlackApi.createSlackApi config.Token
+    startListen config connectResponse slackApi
+    // config
+    // |> getBotInfo
+    // |> 
 //     |> startListen

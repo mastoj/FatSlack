@@ -4,14 +4,14 @@ open System.Text.RegularExpressions
 open Types
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
-open FatSlack.Core
-open FatSlack.Core.Domain.SimpleTypes
-open FatSlack.Core.Domain.Types
-open FatSlack.Core.Domain.Types.Events
-open FatSlack.Core.Domain.Types.Actions
-open FatSlack.Core.Api.Dto.Actions
-open FatSlack.Core.Net
-open FatSlack.Core.SlackApi
+open FatSlack
+open FatSlack.Domain.SimpleTypes
+open FatSlack.Domain.Types
+open FatSlack.Domain.Types.Events
+open FatSlack.Domain.Types.Actions
+open FatSlack.Api.Dto.Actions
+open FatSlack.Net
+open FatSlack.SlackApi
 
 let isAdressedBot alias (UserId botId) (message: RegularMessage) = 
     let checkPattern text pattern = 

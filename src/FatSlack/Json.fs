@@ -1,5 +1,5 @@
 [<RequireQualifiedAccess>]
-module FatSlack.Core.Json
+module FatSlack.Json
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq

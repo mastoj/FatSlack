@@ -1,8 +1,8 @@
 module FatSlack.Bot.Types
 
-open FatSlack.Core.Domain.Types.Events
-open FatSlack.Core.Domain.Types.Actions
-open FatSlack.Core.Domain.SimpleTypes
+open FatSlack.Domain.Types.Events
+open FatSlack.Domain.Types.Actions
+open FatSlack.Domain.SimpleTypes
 open System
 
 type MessageType = 

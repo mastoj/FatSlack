@@ -16,7 +16,7 @@
 
 #### 0.0.7-beta - February 10 2018
 
-* Update reference to FatSlack.Core
+* Update reference to FatSlack
 
 #### 0.0.6-beta - February 9 2018
 

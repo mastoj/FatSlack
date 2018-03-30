@@ -1,4 +1,4 @@
-module FatSlack.Core.Errors
+module FatSlack.Errors
 
 type Error =
     | SerializationError of string

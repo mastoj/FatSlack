@@ -3,8 +3,8 @@ module FatSlack.App
 open Suave
 open Operators
 open Filters
-open FatSlack.Core
-open FatSlack.Core.Types
+open FatSlack
+open FatSlack.Types
 
 module Choice = 
     let handle<'a, 'b> okF failF choice = 

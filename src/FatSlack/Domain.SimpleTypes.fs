@@ -1,4 +1,4 @@
-module FatSlack.Core.Domain.SimpleTypes
+module FatSlack.Domain.SimpleTypes
 
 type ChannelId = ChannelId of string
     with member this.value = match this with ChannelId v -> v

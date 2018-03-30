@@ -1,4 +1,4 @@
-module FatSlack.Core.Net
+module FatSlack.Net
 
 [<RequireQualifiedAccess>]
 module Http =

@@ -1,11 +1,11 @@
-namespace FatSlack.Core.Api.Dto
+namespace FatSlack.Api.Dto
 open System
 open System.Collections.Generic
-open FatSlack.Core.Domain
-open FatSlack.Core.Errors
-open FatSlack.Core.Domain.Types
-open FatSlack.Core.Domain.Types.Actions
-open FatSlack.Core.Domain.SimpleTypes
+open FatSlack.Domain
+open FatSlack.Errors
+open FatSlack.Domain.Types
+open FatSlack.Domain.Types.Actions
+open FatSlack.Domain.SimpleTypes
 
 [<AutoOpen>]
 module Helpers =

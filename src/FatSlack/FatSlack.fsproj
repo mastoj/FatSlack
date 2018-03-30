@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>FatSlack.Core</AssemblyName>
+    <AssemblyName>FatSlack</AssemblyName>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Errors.fs" />
     <Compile Include="Json.fs" />
-    <Compile Include="Domain.SimpleTypes.fs" />
-    <Compile Include="Domain.Types.fs" />
-    <Compile Include="Api.Dto.fs" />
+    <!-- <Compile Include="Domain.SimpleTypes.fs" /><Compile Include="Domain.Types.fs" /><Compile Include="Api.Dto.fs" /> -->
     <Compile Include="Net.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="SlackApi.fs" />
+    <Compile Include="Bot.fs" />
     <None Include="Script.fsx" />
-    <Compile Include="AssemblyInfo.fs" />
+    <!-- <Compile Include="App.fs" /> -->
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
