@@ -1,6 +1,7 @@
 module FatSlack.Types
 
 open Newtonsoft.Json
+open System
 
 type Text = string
 type Ts = string
@@ -75,6 +76,19 @@ type Action =
         [<JsonProperty("selected_options")>]SelectedOptions: Option list
         [<JsonProperty("data_source")>]DataSource: string
     }
+    with
+        static member defaultValue name actionType =
+            {
+                Name = name
+                Type = actionType
+                Text = ""
+                Style = ""
+                Value = ""
+                Confirm = Unchecked.defaultof<Confirm>
+                Options = []
+                SelectedOptions = []
+                DataSource = ""
+            }
 
 type Attachment =
     {
@@ -97,6 +111,28 @@ type Attachment =
         Ts: Ts
         Actions: Action list
     }
+    with
+        static member defaultValue = 
+            {
+                Fallback = ""
+                CallbackId = ""
+                Color = ""
+                Pretext = ""
+                AttachmentType = ""
+                AuthorName = ""
+                AuthorLink = ""
+                AuthorIcon = ""
+                Title = ""
+                TitleLink = ""
+                Text = ""
+                Fields = []
+                ImageUrl = ""
+                ThumbUrl = ""
+                Footer = ""
+                FooterIcon = ""
+                Ts = ""
+                Actions = []
+            }
 
 type ChatMessage =
     {
@@ -144,14 +180,16 @@ type Event = ChatMessage
 
 type PostMessage = ChatMessage -> Async<ChatResponseMessage>
 type UpdateMessage = ChatMessage -> Async<ChatResponseMessage>
-
-type EventHandler = Event -> unit
+type CommandText = Text
 
 type SlackApi =
     {
         PostMessage: PostMessage
         UpdateMessage: UpdateMessage
     }
+
+type EventHandler = SlackApi -> Event -> unit
+type EventMatcher = CommandText -> Event -> bool
 
 //type EventHan
 

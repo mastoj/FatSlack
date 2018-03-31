@@ -6,7 +6,9 @@ let sendMessage url token (data: obj) =
     let payload = Json.serialize data
     let authorizationHeader = sprintf "Bearer %s" token
     async {
-        let! response = Http.postJson [("Authorization", authorizationHeader)] url (Http.JsonData payload)
+        let jsonPayload = (Http.JsonData payload)
+        printfn "==> Posting: %A" jsonPayload
+        let! response = Http.postJson [("Authorization", authorizationHeader)] url jsonPayload
         return 
             response
             |> (fun x -> printfn "==> Raw response: %A" x; x)
