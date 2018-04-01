@@ -8,6 +8,7 @@
     <Compile Include="Json.fs" />
     <Compile Include="Net.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="Dsl.fs" />
     <Compile Include="SlackApi.fs" />
     <Compile Include="Bot.fs" />
     <None Include="Script.fsx" />

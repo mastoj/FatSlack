@@ -81,13 +81,13 @@ type Action =
             {
                 Name = name
                 Type = actionType
-                Text = ""
-                Style = ""
-                Value = ""
+                Text = null
+                Style = null
+                Value = null
                 Confirm = Unchecked.defaultof<Confirm>
                 Options = []
                 SelectedOptions = []
-                DataSource = ""
+                DataSource = null
             }
 
 type Attachment =
@@ -112,25 +112,25 @@ type Attachment =
         Actions: Action list
     }
     with
-        static member defaultValue = 
+        static member defaultValue callBackId = 
             {
-                Fallback = ""
-                CallbackId = ""
-                Color = ""
-                Pretext = ""
-                AttachmentType = ""
-                AuthorName = ""
-                AuthorLink = ""
-                AuthorIcon = ""
-                Title = ""
-                TitleLink = ""
-                Text = ""
+                Fallback = null
+                CallbackId = callBackId
+                Color = null
+                Pretext = null
+                AttachmentType = null
+                AuthorName = null
+                AuthorLink = null
+                AuthorIcon = null
+                Title = null
+                TitleLink = null
+                Text = null
                 Fields = []
-                ImageUrl = ""
-                ThumbUrl = ""
-                Footer = ""
-                FooterIcon = ""
-                Ts = ""
+                ImageUrl = null
+                ThumbUrl = null
+                Footer = null
+                FooterIcon = null
+                Ts = null
                 Actions = []
             }
 
@@ -150,6 +150,23 @@ type ChatMessage =
         Reactions: Reaction list
         Attachments: Attachment list
     }
+    with 
+        static member defaultValue =
+            {
+                Type = null
+                Subtype = null
+                Channel = null
+                User = null
+                Text = null
+                Ts = null
+                Edited = Unchecked.defaultof<Edited>
+                DeletedTs = null
+                EventTs = null
+                IsStarred = false
+                PinnedTo = []
+                Reactions = []
+                Attachments = []
+            }
 
 type InteractiveMessage =
     {
@@ -190,114 +207,3 @@ type SlackApi =
 
 type EventHandler = SlackApi -> Event -> unit
 type EventMatcher = CommandText -> Event -> bool
-
-//type EventHan
-
-// open FatSlack
-// open System.Text.RegularExpressions
-// open FatSlack.Domain.Types.Events
-
-// type EventParser = 
-//     | SimpleEventParser of string
-//     | RegexEventParser of Regex
-//     | JsonEventParser of string
-
-// type SimpleEventParseResult = string * string list
-// type JsonEventParseResult = string * string
-// type RegexEventParseResult = Match
-// type EventParseResult = 
-//     | SimpleEventParseResult of SimpleEventParseResult
-//     | JsonEventParseResult of JsonEventParseResult
-//     | RegexEventParseResult of RegexEventParseResult
-
-// type EventHandler = EventParseResult -> Domain.Types.Events.Event -> (Domain.Types.Actions.ActionMessage -> unit) -> unit
-
-// let createRegularHandler h : EventHandler =
-//     fun eventParseResult event callback ->
-//         match event with
-//         | Domain.Types.Events.Message (RegularMessage m) ->
-//             h eventParseResult m callback
-//         | _ -> raise (exn "Should never get a non RegularMessage here")
-
-// let createSimpleParser parser = SimpleEventParser parser
-
-// type CommandDefinition = 
-//     {
-//         Syntax: string
-//         Description: string
-//         EventParser: EventParser
-//         EventHandler: EventHandler
-//     }
-//     with 
-//         static member private createCommand parser handler syntax description  = 
-//             {
-//                 Syntax = syntax
-//                 Description = description
-//                 EventParser = parser
-//                 EventHandler = handler
-//             }
-//         static member createRegularHandler h : EventHandler =
-//             fun eventParseResult event callback ->
-//                 match event with
-//                 | Domain.Types.Events.Message (RegularMessage m) ->
-//                     h eventParseResult m callback
-//                 | _ -> raise (exn "Should never get a non RegularMessage here")
-
-//         static member createSimpleCommand handler parser = 
-//             CommandDefinition.createCommand (SimpleEventParser parser) (fun (SimpleEventParseResult h) -> handler h)
-//         static member createRegexCommand handler parser = 
-//             CommandDefinition.createCommand (RegexEventParser parser) (fun (RegexEventParseResult h) -> handler h)
-//         static member createJsonCommand handler parser = 
-//             CommandDefinition.createCommand (JsonEventParser parser) (fun (JsonEventParseResult h) -> handler h)
-
-// type ListenerDefinition = 
-//     {
-//         EventParser: EventParser
-//         EventHandler: EventHandler
-//     }
-//     with 
-//         static member private createListener parser handler =
-//             {
-//                 EventParser = parser
-//                 EventHandler = handler
-//             }
-//         static member createRegexListener handler parser = 
-//             ListenerDefinition.createListener (RegexEventParser parser) (fun (RegexEventParseResult h) -> handler h)
-
-// type BotConfiguration = 
-//     {
-//         Token: string
-//         Alias: string option
-//         Commands: CommandDefinition list
-//         Listeners: ListenerDefinition list
-//     }
-
-// type Team =
-//     {
-//         Id: string
-//         Name: string
-//         Domain: string
-//     }
-
-// type SlackUser =
-//     {
-//         Id: string
-//         Name: string
-//     }
-
-// type BotInformation = 
-//     {
-//         Configuration: BotConfiguration
-//         Team: Team
-//         User: SlackUser
-//         WebSocketUrl: string
-//     }
-
-// // type ActionRequest = 
-// //     {
-// //         Actions: Action list
-// //         Token: string
-// //         Channel: Channel
-// //         User: SlackUser
-// //         Original_message: Message
-// //     }

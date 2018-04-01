@@ -3,6 +3,8 @@
 open System
 open FatSlack.Bot
 open FatSlack.Types
+open FatSlack.Dsl
+open FatSlack.Dsl.Types
 
 let leetHandler : EventHandler =
     fun slackApi event ->
@@ -24,25 +26,39 @@ let leetMatcher : EventMatcher =
 
 let buttonHandler : EventHandler =
     fun slackApi event ->
-        let message = 
-            { event with 
-                Text = "Show a button"
-                Attachments = [
-                    {
-                        Attachment.defaultValue
-                            with
-                                Text = "Some attachment"
-                                CallbackId = "callbackid" 
-                                Actions = [
-                                    {
-                                        Action.defaultValue "mybutton" "button"
-                                        with
-                                            Text = "Click me"
-                                            Value = "clicked"
-                                    }
-                                ]
-                    }
-                ]}
+        let actions = [
+            Action.createAction (Button ("mybutton","Click me", "clicked"))
+        ]
+        let attachments = [
+            (
+                Attachment.createAttachment "callbackid"
+                |> Attachment.withText "Some attachment"
+                |> Attachment.withActions actions
+            )
+        ]
+        let message =
+            ChatMessage.createMessage event.Channel
+            |> ChatMessage.withText "Show a button"
+            |> ChatMessage.withAttachments attachments
+        // let message = 
+        //     { event with 
+        //         Text = "Show a button"
+        //         Attachments = [
+        //             {
+        //                 Attachment.defaultValue
+        //                     with
+        //                         Text = "Some attachment"
+        //                         CallbackId = "callbackid" 
+        //                         Actions = [
+        //                             {
+        //                                 Action.defaultValue "mybutton" "button"
+        //                                 with
+        //                                     Text = "Click me"
+        //                                     Value = "clicked"
+        //                             }
+        //                         ]
+        //             }
+        //         ]}
         slackApi.PostMessage message |> Async.RunSynchronously |> ignore
 let buttonMatcher : EventMatcher =
     fun commandText event -> 
