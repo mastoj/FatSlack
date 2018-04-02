@@ -40,28 +40,10 @@ let buttonHandler : EventHandler =
             ChatMessage.createMessage event.Channel
             |> ChatMessage.withText "Show a button"
             |> ChatMessage.withAttachments attachments
-        // let message = 
-        //     { event with 
-        //         Text = "Show a button"
-        //         Attachments = [
-        //             {
-        //                 Attachment.defaultValue
-        //                     with
-        //                         Text = "Some attachment"
-        //                         CallbackId = "callbackid" 
-        //                         Actions = [
-        //                             {
-        //                                 Action.defaultValue "mybutton" "button"
-        //                                 with
-        //                                     Text = "Click me"
-        //                                     Value = "clicked"
-        //                             }
-        //                         ]
-        //             }
-        //         ]}
         slackApi.PostMessage message |> Async.RunSynchronously |> ignore
+
 let buttonMatcher : EventMatcher =
-    fun commandText event -> 
+    fun commandText _ -> 
         let isMatch = commandText = "button"
         printfn "==> Is it a match? %A" isMatch
         isMatch
@@ -82,7 +64,6 @@ let createBot token =
         EventHandler = buttonHandler
         EventMatcher = buttonMatcher
     }
-    // |> withCommand LeetCommand.command
     |> start
 
 
@@ -91,5 +72,5 @@ let main argv =
     let token = argv.[0]
     createBot token
     printfn "Hello World from F#! %s" argv.[0]
-    Console.ReadLine() |> ignore
+    System.Threading.Thread.Sleep(Int32.MaxValue)
     0 // return an integer exit code
