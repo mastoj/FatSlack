@@ -23,11 +23,12 @@ type SlackRequestError =
 type RequestHandler = SlackApi -> Payload -> Result<string, SlackRequestError>
 
 let validateRequest token (jObj:JObject) =
-    match jObj |> Json.getValue "token" |> Option.map (Json.getStringFromToken) with
-    | Some requestToken -> 
-        if token = requestToken then Result.Ok jObj
-        else Result.Error InvalidToken
-    | None -> Result.Error MissingToken
+    Result.Ok jObj
+    // match jObj |> Json.getValue "token" |> Option.map (Json.getStringFromToken) with
+    // | Some requestToken -> 
+    //     if token = requestToken then Result.Ok jObj
+    //     else Result.Error InvalidToken
+    // | None -> Result.Error MissingToken
 
 let (|InteractiveMessageType|_|) (jObj:JObject) =
     match jObj |> Json.getValue "type" |> Option.map (Json.getStringFromToken) with
