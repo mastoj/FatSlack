@@ -67,8 +67,20 @@ let createBot token =
     |> start
 
 
+open Suave
+open System.Threading
 [<EntryPoint>]
 let main argv =
+    let cfg =
+            { defaultConfig with
+                  bindings =
+                    [ HttpBinding.createSimple HTTP "0.0.0.0" 8080 ] }
+
+    printfn "Starting web server"
+    let cts = new CancellationTokenSource()
+    let listening, server = startWebServerAsync cfg (Successful.OK "Hello World!")
+    Async.Start(server, cts.Token)
+
     let token = argv.[0]
     createBot token
     printfn "Hello World from F#! %s" argv.[0]
