@@ -1,3 +1,3 @@
 #!/bin/bash
 
-kubectl expose deployment fatslacksample --port=8080 --name=fatslacksample
+kubectl expose pod fatslacksample --port=8080 --type=LoadBalancer --name=fatslacksample
