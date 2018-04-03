@@ -11,6 +11,7 @@
     <Compile Include="Dsl.fs" />
     <Compile Include="SlackApi.fs" />
     <Compile Include="Bot.fs" />
+    <Compile Include="App.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

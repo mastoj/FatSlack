@@ -68,7 +68,10 @@ let createBot token =
 
 
 open Suave
+open Suave.Filters
+open Suave.Operators
 open System.Threading
+open FatSlack.App
 [<EntryPoint>]
 let main argv =
     let cfg =
@@ -76,9 +79,46 @@ let main argv =
                   bindings =
                     [ HttpBinding.createSimple HTTP "0.0.0.0" 8080 ] }
 
+    let logRequest : WebPart =
+        fun (ctx: HttpContext) ->
+            async {
+                printfn "Request: %A" ctx.request
+                return (Some ctx)
+            }
+
+    let healthCheck =
+        choose
+            [
+                path "/health/ready" >=> Successful.OK "Ready"
+                path "/health/health" >=> Successful.OK "Healthy"
+            ]
+
+    let handleRequest =
+        request(fun req ->
+            match req.formData "payload" with
+            | Choice1Of2 payloadStr ->
+                payloadStr 
+                |> (createRequestHandler "" (FatSlack.SlackApi.createSlackApi ""))
+                |> (sprintf "%A")
+                |> Successful.OK
+            | Choice2Of2 s ->
+                printfn "Missing payload: %s" s
+                Successful.OK ""
+        )
+
+    let app = 
+        choose [
+            healthCheck
+            logRequest >=>
+            choose
+                [
+                    path "/action" >=> handleRequest
+                ]
+        ]
+
     printfn "Starting web server"
     let cts = new CancellationTokenSource()
-    let listening, server = startWebServerAsync cfg (Successful.OK "Hello World!")
+    let listening, server = startWebServerAsync cfg app
     Async.Start(server, cts.Token)
 
     let token = argv.[0]
