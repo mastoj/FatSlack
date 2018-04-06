@@ -6,12 +6,10 @@ open Types
 open FatSlack.Types
 
 type Payload = string
-type InteractiveMessage = unit
-type Submission = unit
 
 type SlackRequest =
     | InteractiveMessage of InteractiveMessage
-    | Submission of Submission
+    | DialogSubmission of DialogSubmission
 
 type SlackRequestError =
     | InvalidToken
@@ -35,17 +33,17 @@ let (|InteractiveMessageType|_|) (jObj:JObject) =
     | Some "interactive_message" -> Some(InteractiveMessageType)
     | _ -> None
 
-let (|SubmisstionType|_|) (jObj:JObject) =
+let (|DialogSubmisstionType|_|) (jObj:JObject) =
     match jObj |> Json.getValue "type" |> Option.map (Json.getStringFromToken) with
-    | Some "dialog_submission" -> Some(SubmisstionType)
+    | Some "dialog_submission" -> Some(DialogSubmisstionType)
     | _ -> None
 
 let parsePayload jObj =
     match jObj with
     | InteractiveMessageType ->
         Json.deserialize<InteractiveMessage> (jObj.ToString()) |> InteractiveMessage |> Result.Ok
-    | SubmisstionType ->
-        Json.deserialize<Submission> (jObj.ToString()) |> Submission |> Result.Ok
+    | DialogSubmisstionType ->
+        Json.deserialize<DialogSubmission> (jObj.ToString()) |> DialogSubmission |> Result.Ok
     | _ -> Result.Error (UnknownSlackRequest)
 
 let handleRequest (slackApi: SlackApi) payload =

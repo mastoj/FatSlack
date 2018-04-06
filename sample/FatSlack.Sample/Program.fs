@@ -11,11 +11,11 @@ let leetHandler : EventHandler =
         async {
             let pongMessage = { event with Text = "Pong 1337" }
             printfn "==> Ponging: %A" pongMessage
-            let! response = slackApi.PostMessage pongMessage
+            let! response = slackApi (PostMessage pongMessage)
             do! Async.Sleep 3000
             let updateMessage = { response.Message with Text = "Updated Pong 1337"; Channel = response.Channel}
             printfn "==> Updating: %A" updateMessage
-            do! slackApi.UpdateMessage updateMessage |> Async.Ignore
+            do! slackApi (UpdateMessage updateMessage) |> Async.Ignore
         } |> Async.RunSynchronously
 
 let leetMatcher : EventMatcher =
@@ -40,7 +40,8 @@ let buttonHandler : EventHandler =
             ChatMessage.createMessage event.Channel
             |> ChatMessage.withText "Show a button"
             |> ChatMessage.withAttachments attachments
-        slackApi.PostMessage message |> Async.RunSynchronously |> ignore
+            |> PostMessage
+        slackApi message |> Async.RunSynchronously |> ignore
 
 let buttonMatcher : EventMatcher =
     fun commandText _ -> 

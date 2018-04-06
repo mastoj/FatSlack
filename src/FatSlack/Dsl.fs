@@ -27,3 +27,65 @@ module Action =
         match action with
         | Button (name, text, value) ->
             { (Action.defaultValue name "button") with Text = text; Value = value }
+
+[<RequireQualifiedAccess>]
+module Dialog =
+    let createDialog = Dialog.defaultValue
+
+    let withElement element dialog = { dialog with Elements = element :: dialog.Elements }
+    let withElements elements dialog = { dialog with Elements = elements @ dialog.Elements }
+    let withSubmitLabel submitLabel dialog = { dialog with SubmitLabel = submitLabel }
+
+
+[<RequireQualifiedAccess>]
+module DialogMessage =
+    let createDialogMessage = DialogMessage.defaultValue
+
+[<RequireQualifiedAccess>]
+module Element =
+    open System
+    type Subtype =
+        | Email
+        | Number
+        | Tel
+        | Url
+
+    type Type =
+        | Text of Subtype option
+        | TextArea of Subtype option
+        | Select
+
+    let createElement = Element.defaultValue
+
+    let withLabel value element = { element with Label = value }
+    let withType elemType (element: Element) : Element =
+
+        let setSubType subtypeOpt elem =
+            subtypeOpt
+            |> Option.map (fun subtype ->
+                match subtype with
+                | Email -> "email"
+                | Number -> "number"
+                | Tel -> "tel"
+                | Url -> "url"
+                |> (fun subtype -> { elem with Subtype = subtype } : Element))
+            |> Option.defaultWith (fun () -> elem)
+
+        match elemType with
+        | Text subtype ->
+            { element with Type = "text" }
+            |> setSubType subtype
+        | TextArea subtype ->
+            { element with Type = "textarea" }
+            |> setSubType subtype
+        | Select ->
+            { element with Type = "select" }
+
+    let withPlaceholder value element = { element with Placeholder = value }
+    let withOptional value element = { element with Optional = value }
+    let withMaxLength (value: int) element = { element with MaxLength = Nullable<int>(value) }
+    let withMinLength (value: int) element = { element with MinLength = Nullable<int>(value) }
+    let withHint value element = { element with Hint = value }
+    let withValue value element : Element = { element with Value = value }
+    let withOption option element : Element = { element with Options = option :: element.Options }
+    let withOptions options element : Element = { element with Options = options @ element.Options }

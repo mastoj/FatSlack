@@ -168,6 +168,64 @@ type ChatMessage =
                 Attachments = []
             }
 
+type Element =
+    {
+        Label: string
+        Name: string
+        Type: string
+        Subtype: string
+        Placeholder: string
+        Optional: bool
+        [<JsonProperty("max_length")>]MaxLength: Nullable<int>
+        [<JsonProperty("min_length")>]MinLength: Nullable<int>
+        Hint: string
+        Value: string
+        Options: Option list
+    }
+    with
+        static member defaultValue name =
+            {
+                Type = null
+                Name = name
+                Label = null
+                Subtype = null
+                Placeholder = null
+                Optional = false
+                MaxLength = Nullable<int>()
+                MinLength = Nullable<int>()
+                Hint = null
+                Value = null
+                Options = []
+            }
+
+type Dialog =
+    {
+        [<JsonProperty("callback_id")>]CallbackId: CallbackId
+        Title: string
+        [<JsonProperty("submit_label")>]SubmitLabel: string
+        Elements: Element list
+    }
+    with
+        static member defaultValue callbackId title =
+            {
+                CallbackId = callbackId
+                Title = title
+                SubmitLabel = null
+                Elements = []
+            }
+
+type DialogMessage =
+    {
+        [<JsonProperty("trigger_id")>]TriggerId: TriggerId
+        Dialog: Dialog
+    }
+    with
+        static member defaultValue triggerId dialog =
+            {
+                TriggerId = triggerId
+                Dialog = dialog
+            }
+
 type InteractiveMessage =
     {
         Type: string
@@ -185,6 +243,24 @@ type InteractiveMessage =
         [<JsonProperty("trigger_id")>]TriggerId: TriggerId
     }
 
+type DialogSubmission =
+    {
+        Type: string
+        Submission: Map<string, string>
+        [<JsonProperty("callback_id")>]CallbackId: CallbackId
+        Team: Team
+        User: User
+        Channel: Channel
+        [<JsonProperty("action_ts")>]ActionTs: Ts
+        Token: string
+        [<JsonProperty("response_url")>]ResponseUrl: Url
+    }
+
+type Message =
+    | PostMessage of ChatMessage
+    | UpdateMessage of ChatMessage
+    | DialogMessage of DialogMessage
+
 type ChatResponseMessage =
     {
         Ok: bool
@@ -194,16 +270,9 @@ type ChatResponseMessage =
     }
 
 type Event = ChatMessage
-
-type PostMessage = ChatMessage -> Async<ChatResponseMessage>
-type UpdateMessage = ChatMessage -> Async<ChatResponseMessage>
 type CommandText = Text
 
-type SlackApi =
-    {
-        PostMessage: PostMessage
-        UpdateMessage: UpdateMessage
-    }
+type SlackApi = Message -> Async<ChatResponseMessage>
 
 type EventHandler = SlackApi -> Event -> unit
 type EventMatcher = CommandText -> Event -> bool
