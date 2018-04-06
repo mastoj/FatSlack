@@ -75,6 +75,9 @@ open System.Threading
 open FatSlack.App
 [<EntryPoint>]
 let main argv =
+    let token = argv.[0]
+
+
     let cfg =
             { defaultConfig with
                   bindings =
@@ -94,12 +97,13 @@ let main argv =
                 path "/health/health" >=> Successful.OK "Healthy"
             ]
 
-    let handleRequest =
+    let handleRequest token =
+        let slackApi = FatSlack.SlackApi.createSlackApi token
         request(fun req ->
             match req.formData "payload" with
             | Choice1Of2 payloadStr ->
                 payloadStr 
-                |> (createRequestHandler "" (FatSlack.SlackApi.createSlackApi ""))
+                |> (createRequestHandler "" slackApi)
                 |> (sprintf "%A")
                 |> Successful.OK
             | Choice2Of2 s ->
@@ -113,7 +117,7 @@ let main argv =
             logRequest >=>
             choose
                 [
-                    path "/action" >=> handleRequest
+                    path "/action" >=> handleRequest token
                 ]
         ]
 
@@ -121,8 +125,6 @@ let main argv =
     let cts = new CancellationTokenSource()
     let listening, server = startWebServerAsync cfg app
     Async.Start(server, cts.Token)
-
-    let token = argv.[0]
     createBot token
     printfn "Hello World from F#! %s" argv.[0]
     System.Threading.Thread.Sleep(Int32.MaxValue)

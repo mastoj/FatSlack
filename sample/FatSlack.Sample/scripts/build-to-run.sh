@@ -1,6 +1,6 @@
 #!/bin/bash
 
-_token=$_
+_token=$1
 scripts/publish.sh
 scripts/build-container.sh
 scripts/publish-container.sh

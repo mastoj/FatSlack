@@ -18,6 +18,6 @@ let sendMessage url token (data: obj) =
 
 let createSlackApi token message =
     match message with
-    | PostMessage msg -> sendMessage token "https://slack.com/api/chat.postMessage" msg
-    | UpdateMessage msg -> sendMessage token "https://slack.com/api/chat.update" msg
-    | DialogMessage msg -> sendMessage token "https://slack.com/api/dialog.open" msg
+    | PostMessage msg -> sendMessage "https://slack.com/api/chat.postMessage" token msg
+    | UpdateMessage msg -> sendMessage "https://slack.com/api/chat.update" token msg
+    | DialogMessage msg -> sendMessage "https://slack.com/api/dialog.open" token msg

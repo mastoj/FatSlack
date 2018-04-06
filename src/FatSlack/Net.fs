@@ -136,7 +136,7 @@ module WebSocket =
     let connect<'T> (messageHandler: HandleWebsocketMessage) url = 
         let rec innerConnect() =
             async {
-                printfn "Websocket connect"
+                printfn "Websocket connect: %s" url
                 let socket = new System.Net.WebSockets.ClientWebSocket()
                 let uri = Uri(url)
                 let! ct = Async.CancellationToken

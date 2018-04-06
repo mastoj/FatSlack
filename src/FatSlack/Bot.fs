@@ -111,8 +111,11 @@ let withSpyCommands = (List.map SpyCommand) >> withCommands
 let withAlias alias config = { config with Alias = Some alias }
 
 let getBotInfo token =
-    sprintf "https://slack.com/api/rtm.connect?token=%s" token
+    let connectUrl = sprintf "https://slack.com/api/rtm.connect?token=%s" token
+    printfn "Connecting to: %A" connectUrl
+    connectUrl
     |> Http.downloadJsonObject<ConnectResponse>
+    |> (fun x -> printfn "Connected: %A" x; x)
 
 let startListen commands alias connectResponse slackApi =
     let deserializeEvent = Json.deserialize<Event>
