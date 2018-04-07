@@ -1,25 +1,7 @@
 module FatSlack.App
 open FatSlack
 open Newtonsoft.Json.Linq
-open System
 open Types
-open FatSlack.Types
-
-type Payload = string
-
-type SlackRequest =
-    | InteractiveMessage of InteractiveMessage
-    | DialogSubmission of DialogSubmission
-
-type SlackRequestError =
-    | InvalidToken
-    | MissingToken
-    | FailedToParsePayload
-    | UnknownSlackRequest
-    | FailedToHandleRequest of SlackRequest
-
-type RequestHandler = SlackApi -> Payload -> Result<string, SlackRequestError>
-type AppHandler = SlackApi -> SlackRequest -> Result<string, SlackRequestError>
 
 let validateRequest token (jObj:JObject) =
     match jObj |> Json.getValue "token" |> Option.map (Json.getStringFromToken) with

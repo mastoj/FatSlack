@@ -278,10 +278,24 @@ type ChatResponseMessage =
         Message: ChatMessage
     }
 
+type Payload = string
+
+type SlackRequest =
+    | InteractiveMessage of InteractiveMessage
+    | DialogSubmission of DialogSubmission
+
+type SlackRequestError =
+    | InvalidToken
+    | MissingToken
+    | FailedToParsePayload
+    | UnknownSlackRequest
+    | FailedToHandleRequest of SlackRequest
+
 type Event = ChatMessage
 type CommandText = Text
 
 type SlackApi = Message -> Async<ChatResponseMessage>
-
 type EventHandler = SlackApi -> Event -> unit
 type EventMatcher = CommandText -> Event -> bool
+type RequestHandler = SlackApi -> Payload -> Result<string, SlackRequestError>
+type AppHandler = SlackApi -> SlackRequest -> Result<string, SlackRequestError>
