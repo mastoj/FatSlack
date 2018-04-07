@@ -55,7 +55,27 @@ module Element =
         | TextArea of Subtype option
         | Select
 
-    let createElement = Element.defaultValue
+    let createElement name elemType label =
+        let setSubType subtypeOpt elem =
+            subtypeOpt
+            |> Option.map (fun subtype ->
+                match subtype with
+                | Email -> "email"
+                | Number -> "number"
+                | Tel -> "tel"
+                | Url -> "url"
+                |> (fun subtype -> { elem with Subtype = subtype } : Element))
+            |> Option.defaultWith (fun () -> elem)
+
+        match elemType with
+        | Text subtype ->
+            Element.defaultValue name "text" label
+            |> setSubType subtype
+        | TextArea subtype ->
+            Element.defaultValue name "textarea" label
+            |> setSubType subtype
+        | Select ->
+            Element.defaultValue name "select" label
 
     let withLabel value element = { element with Label = value }
     let withType elemType (element: Element) : Element =
@@ -89,3 +109,11 @@ module Element =
     let withValue value element : Element = { element with Value = value }
     let withOption option element : Element = { element with Options = option :: element.Options }
     let withOptions options element : Element = { element with Options = options @ element.Options }
+
+[<RequireQualifiedAccess>]
+module ElementOption =
+    let createElementOption label value : ElementOption =
+        {
+            Label = label
+            Value = value
+        }

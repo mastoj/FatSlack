@@ -12,6 +12,10 @@ type TeamId = string
 type Domain = string
 type TriggerId = string
 type CallbackId = string
+type Title = string
+type Name = string
+type Label = string
+type Value = string
 
 type User =
     {
@@ -168,10 +172,15 @@ type ChatMessage =
                 Attachments = []
             }
 
+type ElementOption =
+    {
+        Label: Label
+        Value: Value
+    }
 type Element =
     {
         Label: string
-        Name: string
+        Name: Name
         Type: string
         Subtype: string
         Placeholder: string
@@ -180,14 +189,14 @@ type Element =
         [<JsonProperty("min_length")>]MinLength: Nullable<int>
         Hint: string
         Value: string
-        Options: Option list
+        Options: ElementOption list
     }
     with
-        static member defaultValue name =
+        static member defaultValue name elemType label =
             {
-                Type = null
+                Type = elemType
                 Name = name
-                Label = null
+                Label = label
                 Subtype = null
                 Placeholder = null
                 Optional = false
@@ -201,7 +210,7 @@ type Element =
 type Dialog =
     {
         [<JsonProperty("callback_id")>]CallbackId: CallbackId
-        Title: string
+        Title: Title
         [<JsonProperty("submit_label")>]SubmitLabel: string
         Elements: Element list
     }

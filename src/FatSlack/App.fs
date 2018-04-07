@@ -19,14 +19,14 @@ type SlackRequestError =
     | FailedToHandleRequest of SlackRequest
 
 type RequestHandler = SlackApi -> Payload -> Result<string, SlackRequestError>
+type AppHandler = SlackApi -> SlackRequest -> Result<string, SlackRequestError>
 
 let validateRequest token (jObj:JObject) =
-    Result.Ok jObj
-    // match jObj |> Json.getValue "token" |> Option.map (Json.getStringFromToken) with
-    // | Some requestToken -> 
-    //     if token = requestToken then Result.Ok jObj
-    //     else Result.Error InvalidToken
-    // | None -> Result.Error MissingToken
+    match jObj |> Json.getValue "token" |> Option.map (Json.getStringFromToken) with
+    | Some requestToken -> 
+        if token = requestToken then Result.Ok jObj
+        else Result.Error InvalidToken
+    | None -> Result.Error MissingToken
 
 let (|InteractiveMessageType|_|) (jObj:JObject) =
     match jObj |> Json.getValue "type" |> Option.map (Json.getStringFromToken) with
@@ -49,12 +49,12 @@ let parsePayload jObj =
 let handleRequest (slackApi: SlackApi) payload =
     Result.Ok (payload |> Json.serialize)
 
-let createRequestHandler token : RequestHandler =
+let createRequestHandler appHandler appToken : RequestHandler =
     fun slackApi payload ->
         payload
         |> Json.parse
         |> Option.map (Result.Ok)
         |> Option.defaultValue (Result.Error UnknownSlackRequest)
-        |> Result.bind (validateRequest token)
+        |> Result.bind (validateRequest appToken)
         |> Result.bind parsePayload
-        |> Result.bind (handleRequest slackApi)
+        |> Result.bind (appHandler slackApi)

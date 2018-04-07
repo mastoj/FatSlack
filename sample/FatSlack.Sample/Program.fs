@@ -73,10 +73,14 @@ open Suave.Filters
 open Suave.Operators
 open System.Threading
 open FatSlack.App
+open FatSlack.Types
+open FatSlack.Dsl
+open FatSlack.Types
 [<EntryPoint>]
 let main argv =
-    let token = argv.[0]
-
+    printfn "Argv: %A" argv
+    let apiToken = argv.[0]
+    let appToken = argv.[1]
 
     let cfg =
             { defaultConfig with
@@ -97,35 +101,55 @@ let main argv =
                 path "/health/health" >=> Successful.OK "Healthy"
             ]
 
-    let handleRequest token =
-        let slackApi = FatSlack.SlackApi.createSlackApi token
+    let handleRequest appHandler appToken apiToken =
+        let slackApi = FatSlack.SlackApi.createSlackApi apiToken
         request(fun req ->
             match req.formData "payload" with
             | Choice1Of2 payloadStr ->
                 payloadStr 
-                |> (createRequestHandler "" slackApi)
-                |> (sprintf "%A")
-                |> Successful.OK
+                |> (createRequestHandler appHandler appToken slackApi)
+                |> function
+                    | Result.Ok message -> message |> Successful.OK
+                    | Result.Error message -> message |> sprintf "%A" |> RequestErrors.BAD_REQUEST
             | Choice2Of2 s ->
                 printfn "Missing payload: %s" s
                 Successful.OK ""
         )
+    let appHandler : AppHandler =
+        fun slackApi slackRequest ->
+            match slackRequest with
+            | InteractiveMessage msg ->
+                let elements = [
+                    Element.createElement "text" (Element.Text (Some Element.Email)) "Text label"
+                    Element.createElement "textarea" (Element.TextArea None) "Textarea label"
+                    Element.createElement "select" Element.Select "Select label" |> Element.withOption (ElementOption.createElementOption "option1" "value1")
+                ]
+                let dialog = 
+                    Dialog.createDialog "MyCallbackId" "This is a dialog"
+                    |> Dialog.withElements elements
+                let dialogMessage = 
+                    DialogMessage.createDialogMessage msg.TriggerId dialog
+                dialogMessage |> DialogMessage |> slackApi |>  Async.RunSynchronously |> printfn "Pushed dialog: %A"
+                Result.Ok ""
+            | DialogSubmission submission ->
+                printfn "Submission: %A" submission
+                Result.Ok ""
 
-    let app = 
+    let app appToken apiToken =
         choose [
             healthCheck
             logRequest >=>
             choose
                 [
-                    path "/action" >=> handleRequest token
+                    path "/action" >=> handleRequest appHandler appToken apiToken
                 ]
         ]
 
     printfn "Starting web server"
     let cts = new CancellationTokenSource()
-    let listening, server = startWebServerAsync cfg app
+    let listening, server = startWebServerAsync cfg (app appToken apiToken)
     Async.Start(server, cts.Token)
-    createBot token
+    createBot apiToken
     printfn "Hello World from F#! %s" argv.[0]
     System.Threading.Thread.Sleep(Int32.MaxValue)
     0 // return an integer exit code

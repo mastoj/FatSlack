@@ -1,7 +1,8 @@
 #!/bin/bash
 
-_token=$1
+_apitoken=$1
+_apptoken=$2
 scripts/publish.sh
 scripts/build-container.sh
 scripts/publish-container.sh
-scripts/run-pod.sh $_token
+scripts/run-pod.sh $_token $_apptoken
