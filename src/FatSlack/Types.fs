@@ -16,6 +16,12 @@ type Title = string
 type Name = string
 type Label = string
 type Value = string
+type Token = string
+type Payload = string
+type CommandText = Text
+type ChannelName = string
+type UserName = string
+type ResponseType = string
 
 type User =
     {
@@ -153,6 +159,7 @@ type ChatMessage =
         [<JsonProperty("pinned_to")>]PinnedTo: ChannelId list
         Reactions: Reaction list
         Attachments: Attachment list
+        ResponseType: ResponseType
     }
     with 
         static member defaultValue =
@@ -170,6 +177,7 @@ type ChatMessage =
                 PinnedTo = []
                 Reactions = []
                 Attachments = []
+                ResponseType = null
             }
 
 type ElementOption =
@@ -246,7 +254,7 @@ type InteractiveMessage =
         [<JsonProperty("action_ts")>]ActionTs: Ts
         [<JsonProperty("message_ts")>]MessageTs: Ts
         [<JsonProperty("attachment_id")>]AttachmentId: string
-        Token: string
+        Token: Token
         [<JsonProperty("original_message")>]OriginalMessage: ChatMessage
         [<JsonProperty("response_url")>]ResponseUrl: Url
         [<JsonProperty("trigger_id")>]TriggerId: TriggerId
@@ -261,7 +269,7 @@ type DialogSubmission =
         User: User
         Channel: Channel
         [<JsonProperty("action_ts")>]ActionTs: Ts
-        Token: string
+        Token: Token
         [<JsonProperty("response_url")>]ResponseUrl: Url
     }
 
@@ -278,24 +286,101 @@ type ChatResponseMessage =
         Message: ChatMessage
     }
 
-type Payload = string
-
 type SlackRequest =
     | InteractiveMessage of InteractiveMessage
     | DialogSubmission of DialogSubmission
 
+type SlashCommand =
+    {
+        Token: Token
+        [<JsonPropertyAttribute("team_id")>]TeamId: TeamId
+        [<JsonPropertyAttribute("team_domain")>]TeamDomain: TeamId
+        [<JsonPropertyAttribute("channel_id")>]ChannelId: ChannelId
+        [<JsonPropertyAttribute("channel_name")>]ChannelName: ChannelName
+        [<JsonPropertyAttribute("user_id")>]UserId: UserId
+        [<JsonPropertyAttribute("user_name")>]UserName: UserName
+        Command: CommandText
+        Text: Text
+        [<JsonProperty("response_url")>]ResponseUrl: Url
+        [<JsonProperty("trigger_id")>]TriggerId: TriggerId
+    }
+
 type SlackRequestError =
-    | InvalidToken
+    | InvalidAppToken
+    | FailedToParseSlashCommand of exn
     | MissingToken
     | FailedToParsePayload
     | UnknownSlackRequest
     | FailedToHandleRequest of SlackRequest
 
 type Event = ChatMessage
-type CommandText = Text
-
 type SlackApi = Message -> Async<ChatResponseMessage>
 type EventHandler = SlackApi -> Event -> unit
 type EventMatcher = CommandText -> Event -> bool
-type RequestHandler = SlackApi -> Payload -> Result<string, SlackRequestError>
-type AppHandler = SlackApi -> SlackRequest -> Result<string, SlackRequestError>
+type RequestHandler = SlackApi -> Payload -> Result<ChatMessage option, SlackRequestError>
+type AppHandler = SlackApi -> SlackRequest -> Result<ChatMessage option, SlackRequestError>
+type SlashCommandHandler = SlackApi -> SlashCommand -> Result<ChatMessage option, SlackRequestError>
+type SlashCommandMatcher = SlashCommand -> bool
+
+type Handler<'T> = SlackApi -> 'T -> Result<ChatMessage option, SlackRequestError>
+type Matcher<'T> = 'T -> bool
+
+type Specification<'T> =
+    {
+        Handler: Handler<'T>
+        Matcher: Matcher<'T>
+    }
+
+type SlashCommandSpecification = Specification<SlashCommand>
+type RequestSpecfication = Specification<SlackRequest>
+
+type ConnectResponse = 
+    {
+        Ok: bool 
+        Url: Url
+        Team: Team
+        Self: User
+    }
+
+type SpyCommand =
+    {
+        Description: string
+        EventMatcher: EventMatcher
+        EventHandler: EventHandler
+    }
+
+type SlackCommand =
+    {
+        Syntax: string
+        Description: string
+        EventMatcher: EventMatcher
+        EventHandler: EventHandler
+    }
+
+type BotCommand =
+    | SpyCommand of SpyCommand
+    | SlackCommand of SlackCommand
+
+type FatSlackConfiguration =
+    {
+        Alias: string option
+        ApiToken: string option
+        AppToken: string option
+        Commands: BotCommand list
+        SlashCommandSpecs: SlashCommandSpecification list
+        RequestSpecs: RequestSpecfication list
+    }
+
+type SlashApp = Map<string, string> -> Result<ChatMessage option, SlackRequestError>
+type RequestApp = Payload -> Result<ChatMessage option, SlackRequestError>
+
+type CreateBot = FatSlackConfiguration -> unit
+type CreateSlashApp = FatSlackConfiguration -> SlashApp
+type CreateRequestApp = FatSlackConfiguration -> RequestApp
+
+module Functions =
+    let createActionApp<'T> (specs: Specification<'T> list) slackApi action =
+        specs
+        |> List.tryFind (fun spec -> action |> spec.Matcher)
+        |> Option.map (fun spec -> spec.Handler slackApi action)
+        |> Option.defaultWith (fun () -> Result.Ok None)

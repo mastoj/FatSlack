@@ -4,6 +4,13 @@ open Types
 module Types =
     type Action =
         | Button of name:string * text:string * value:string
+    type ResponseType =
+        | InChannel
+        | Ephemeral
+        with member this.stringValue =
+                match this with
+                | InChannel -> "in_channel"
+                | Ephemeral -> "ephemeral"
 
 open Types
 
@@ -14,6 +21,8 @@ module ChatMessage =
     let withText value msg : ChatMessage = { msg with Text = value }
     let withAttachments value msg = { msg with Attachments = value }
     let withChannel value msg : ChatMessage = { msg with Channel = value }
+
+    let withResponseType (value: ResponseType) msg = { msg with ResponseType = value.stringValue }
 
 [<RequireQualifiedAccess>]
 module Attachment =
@@ -77,7 +86,7 @@ module Element =
         | Select ->
             Element.defaultValue name "select" label
 
-    let withLabel value element = { element with Label = value }
+    let withLabel value element : Element = { element with Label = value }
     let withType elemType (element: Element) : Element =
 
         let setSubType subtypeOpt elem =
