@@ -8,10 +8,10 @@
     <Compile Include="Json.fs" />
     <Compile Include="Net.fs" />
     <Compile Include="Types.fs" />
-    <Compile Include="SlackApi.fs" />
-    <Compile Include="Configuration.fs" />
-    <Compile Include="SlashCommandApp.fs" />
     <Compile Include="Dsl.fs" />
+    <Compile Include="Configuration.fs" />
+    <Compile Include="SlackApi.fs" />
+    <Compile Include="SlashCommandApp.fs" />
     <Compile Include="BotApp.fs" />
     <Compile Include="RequestApp.fs" />
     <None Include="Script.fsx" />

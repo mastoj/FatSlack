@@ -109,6 +109,7 @@ let createFatSlackConfiguration appToken apiToken =
         EventMatcher = buttonMatcher
     }
     |> withSlashCommandSpec gcloudPubsub
+    |> withHelpCommand
     |> withInteractiveSpecification interactiveSpecificationSample
     |> withDialogSubmissionSpecification submissionSpecificationSample
 

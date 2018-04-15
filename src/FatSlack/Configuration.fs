@@ -1,6 +1,8 @@
 module FatSlack.Configuration
 open FatSlack
 open Types
+open Dsl
+open Suave.Logging
 
 let init =
     {
@@ -27,6 +29,48 @@ let withSpyCommand = SpyCommand >> withCommand
 
 let withSpyCommands = (List.map SpyCommand) >> withCommands
 
+let withHelpCommand config : FatSlackConfiguration =
+    let matcher text _ = text = "help"
+
+    let onlySlackCommands command =
+        match command with
+        | SlackCommand sc -> Some sc
+        | _ -> None
+
+    let join (strs: string list) = System.String.Join("\n", strs)
+    let handler slackApi (event: Event) =
+        let text =
+            config.Commands
+            |> List.map onlySlackCommands
+            |> List.choose id
+            |> List.sortBy (fun sc -> sc.Syntax)
+            |> List.map (fun sc -> sprintf "*%s*: %s" sc.Syntax sc.Description)
+            |> (fun commands -> (sprintf "*%s*: %s" "help" "List available commands")::commands)
+            |> join
+
+        let message =
+            ChatMessage.createMessage event.Channel
+            |> ChatMessage.withText text
+            |> PostMessage
+
+        message
+        |> slackApi
+        |> Async.RunSynchronously
+        |> ignore
+
+    let helpCommand =
+        SlackCommand {
+            Syntax = "help"
+            Description = "List available commands"
+            EventHandler = handler
+            EventMatcher = matcher
+        }
+
+    {
+        config
+            with Commands = helpCommand :: config.Commands
+    }
+
 let withAlias alias config = { config with Alias = Some alias }
 
 let withSlashCommandSpec slashCommandSpecification config = 
@@ -34,10 +78,6 @@ let withSlashCommandSpec slashCommandSpecification config =
 
 let withRequestCommandSpec requestCommandSpec config =
     { config with RequestSpecs = requestCommandSpec :: config.RequestSpecs }
-
-// type Handler<'T> = SlackApi -> 'T -> Result<ChatMessage option, SlackRequestError>
-// type Matcher<'T> = 'T -> bool
-
 
 let liftSpecification spec lift =
     let matcher action =
