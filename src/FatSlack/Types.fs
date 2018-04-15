@@ -314,7 +314,11 @@ type SlackRequestError =
     | FailedToHandleRequest of SlackRequest
 
 type Event = ChatMessage
-type SlackApi = Message -> Async<ChatResponseMessage>
+type SlackApi = 
+    {
+        Send: Message -> Async<ChatResponseMessage>
+        Respond: Url -> Message -> Async<ChatResponseMessage>
+    }
 type EventHandler = SlackApi -> Event -> unit
 type EventMatcher = CommandText -> Event -> bool
 type RequestHandler = SlackApi -> Payload -> Result<ChatMessage option, SlackRequestError>

@@ -54,7 +54,7 @@ let withHelpCommand config : FatSlackConfiguration =
             |> PostMessage
 
         message
-        |> slackApi
+        |> slackApi.Send
         |> Async.RunSynchronously
         |> ignore
 

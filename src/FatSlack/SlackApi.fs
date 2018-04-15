@@ -16,8 +16,20 @@ let sendMessage url token (data: obj) =
             |> (fun x -> printfn "==> Deserialized: %A" x; x)
     }
 
-let createSlackApi token message =
-    match message with
-    | PostMessage msg -> sendMessage "https://slack.com/api/chat.postMessage" token msg
-    | UpdateMessage msg -> sendMessage "https://slack.com/api/chat.update" token msg
-    | DialogMessage msg -> sendMessage "https://slack.com/api/dialog.open" token msg
+let createSlackApi token =
+    let send message =
+        match message with
+        | PostMessage msg -> sendMessage "https://slack.com/api/chat.postMessage" token msg
+        | UpdateMessage msg -> sendMessage "https://slack.com/api/chat.update" token msg
+        | DialogMessage msg -> sendMessage "https://slack.com/api/dialog.open" token msg
+
+    let respond url message =
+        match message with
+        | PostMessage msg -> msg :> obj
+        | UpdateMessage msg -> msg :> obj
+        | DialogMessage msg -> msg :> obj
+        |> sendMessage url token
+    {
+        Send = send
+        Respond = respond
+    }
