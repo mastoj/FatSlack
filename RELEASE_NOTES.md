@@ -1,3 +1,7 @@
+#### 0.0.11-beta - March 6 2018
+
+* Start of big re-write
+
 #### 0.0.10-beta - February 10 2018
 
 * Update references
@@ -12,7 +16,7 @@
 
 #### 0.0.7-beta - February 10 2018
 
-* Update reference to FatSlack.Core
+* Update reference to FatSlack
 
 #### 0.0.6-beta - February 9 2018
 

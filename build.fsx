@@ -70,7 +70,6 @@ Target "AssemblyInfo" (fun _ ->
           System.IO.Path.GetDirectoryName(projectPath),
           (getAssemblyInfoAttributes projectName)
         )
-
     !! "src/**/*.??proj"
     |> Seq.map getProjectDetails
     |> Seq.iter (fun (projFileName, projectName, folderName, attributes) ->

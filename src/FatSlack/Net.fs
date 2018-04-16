@@ -1,4 +1,4 @@
-module FatSlack.Core.Net
+module FatSlack.Net
 
 [<RequireQualifiedAccess>]
 module Http =
@@ -64,30 +64,79 @@ module Http =
         webClient.UploadValuesAsync(uri, data :?> NameValueCollection)
 
     let postJson (headers:Request.Headers) (url:string) body =
-        use webClient = new System.Net.WebClient()
-        let contentType = ContentType.getContentType body
-        let data = body.toData
-        let uri = Uri(url)
-        ("Content-Type", contentType) :: headers
-        |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
-        webClient.UploadStringAsync(uri, data :?> string)
+        async {
+            use webClient = new System.Net.WebClient()
+            let contentType = ContentType.getContentType body
+            let data = body.toData
+            let uri = Uri(url)
+            printfn "The data to be sent: %A" data
+            printfn "Content-Type: %A" contentType
+            printfn "Uri: %A" uri
+            let! result =
+                ("Content-Type", contentType) :: headers
+                |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
+                webClient.UploadStringTaskAsync(uri, data :?> string)
+                |> Async.AwaitTask
+            return result
+        }
 
-    let post (url:string) body = 
-        use webClient = new System.Net.WebClient()
-        let contentType = ContentType.getContentType body
-        let data = body.toData
-        let uri = Uri(url)
-        webClient.UploadValuesAsync(uri, data :?> NameValueCollection)
+    let post (url:string) body =
+        async {
+            use webClient = new System.Net.WebClient()
+            let contentType = ContentType.getContentType body
+            let data = body.toData
+            let uri = Uri(url)
+            printfn "The data to be sent: %A" data
+            printfn "Content-Type: %A" contentType
+            printfn "Uri: %A" uri
+            [("Content-Type", contentType)]
+            |> List.iter (fun (k,v) -> webClient.Headers.Add(k,v))
+            webClient.UploadStringAsync(uri, data :?> string)
+        }
 
 [<RequireQualifiedAccess>]
 module WebSocket =
     open System
     open System.Net.WebSockets
+    open System.Linq
 
-    let connect url = 
+    type private WebSocketClient =
+        | Open of ClientWebSocket
+        | Connecting
+        | Aborted
+        | Closed
+        | CloseReceived
+        | CloseSent
+        | None
+
+    type HandleWebsocketMessage = string -> Async<unit>
+
+    let private listen (messageHandler: HandleWebsocketMessage) (socket: ClientWebSocket) =
+        let receiveBytes = Array.zeroCreate<byte> 4096
+        let receiveBuffer = new ArraySegment<byte>(receiveBytes)
+        let rec innerListen data =
+            async {
+                let! ct = Async.CancellationToken
+                let! message = socket.ReceiveAsync(receiveBuffer, ct) |> Async.AwaitTask
+
+                let messageBytes = receiveBuffer.Skip(receiveBuffer.Offset).Take(message.Count).ToArray()
+                let messageString = data + System.Text.Encoding.UTF8.GetString(messageBytes)
+                if message.EndOfMessage
+                then
+                    printfn "End of message :%A" messageString
+                    messageString
+                    |> messageHandler
+                    |> Async.Start
+                    return! innerListen ""
+                else
+                    return! innerListen messageString
+            }
+        innerListen "" |> Async.Start
+
+    let connect<'T> (messageHandler: HandleWebsocketMessage) url = 
         let rec innerConnect() =
             async {
-                printfn "Websocket connect"
+                printfn "Websocket connect: %s" url
                 let socket = new System.Net.WebSockets.ClientWebSocket()
                 let uri = Uri(url)
                 let! ct = Async.CancellationToken
@@ -100,7 +149,7 @@ module WebSocket =
                 match socket.State with
                 | WebSocketState.Open -> 
                     printfn "Websocket connection opened"
-                    return socket
+                    return listen messageHandler socket
                 | WebSocketState.Connecting ->
                     printfn "Websocket connecting"
                     do! Async.Sleep 10000
@@ -109,7 +158,8 @@ module WebSocket =
                 | WebSocketState.Closed
                 | WebSocketState.CloseReceived
                 | WebSocketState.CloseSent
-                | WebSocketState.None -> 
+                | WebSocketState.None
+                | _ ->
                     return! innerConnect()
             }
         innerConnect() |> Async.RunSynchronously

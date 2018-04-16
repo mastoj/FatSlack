@@ -1,11 +1,12 @@
 [<RequireQualifiedAccess>]
-module FatSlack.Core.Json
+module FatSlack.Json
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 let serializerSettings = new JsonSerializerSettings()
 serializerSettings.ContractResolver <- new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+serializerSettings.NullValueHandling <- NullValueHandling.Ignore
 
 let deserialize<'a> str = 
     JsonConvert.DeserializeObject<'a>(str, serializerSettings)
