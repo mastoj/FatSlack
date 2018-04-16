@@ -1,3 +1,7 @@
+#### 0.1.0-beta - April 16 2018
+
+* Big rewrite to make it easier to distribute and work with
+
 #### 0.0.11-beta - March 6 2018
 
 * Start of big re-write
