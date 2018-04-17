@@ -1,6 +1,7 @@
 module FatSlack.Dsl
 open Types
 
+[<AutoOpen>]
 module Types =
     type Action =
         | Button of name:string * text:string * value:string

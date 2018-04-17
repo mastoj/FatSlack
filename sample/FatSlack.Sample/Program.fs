@@ -74,6 +74,16 @@ let interactiveSpecificationSample =
             |> Dialog.withElements elements
         let dialogMessage = 
             DialogMessage.createDialogMessage msg.TriggerId dialog
+
+        async {
+            let message = 
+                ChatMessage.createMessage msg.Channel.Id
+                |> ChatMessage.withText "Responding to you"
+                |> PostMessage
+                |> slackApi.Respond msg.ResponseUrl
+            return! message
+        } |> Async.Ignore |> Async.Start
+
         dialogMessage 
         |> DialogMessage 
         |> slackApi.Send
