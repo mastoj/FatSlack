@@ -2,7 +2,6 @@ module FatSlack.BotApp
 
 open Types
 open Net
-open Suave
 open System.Text.RegularExpressions
 
 [<AutoOpen>]

@@ -75,6 +75,7 @@ let interactiveSpecificationSample =
             DialogMessage.createDialogMessage msg.TriggerId dialog
 
         async {
+            do! Async.Sleep 5000
             let message = 
                 ChatMessage.createMessage msg.Channel.Id
                 |> ChatMessage.withText "Responding to you"

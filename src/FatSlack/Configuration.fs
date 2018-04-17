@@ -2,7 +2,6 @@ module FatSlack.Configuration
 open FatSlack
 open Types
 open Dsl
-open Suave.Logging
 
 let init =
     {
