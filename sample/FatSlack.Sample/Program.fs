@@ -11,7 +11,6 @@ open Suave.Filters
 open Suave.Operators
 open System.Threading
 
-
 let leetHandler : EventHandler =
     fun slackApi event ->
         async {
@@ -105,23 +104,29 @@ let submissionSpecificationSample =
         Handler = handler
     }
 
-let createFatSlackConfiguration appToken apiToken =
-    init
-    |> withApiToken apiToken
-    |> withAppToken appToken
-    |> withAlias "jarvis"
-    |> withSlackCommand {
-        Syntax = "1337"
-        Description = "Return a pong and then updates it"
-        EventHandler = leetHandler
-        EventMatcher = leetMatcher
+let leetCommand =
+    {
+            Syntax = "1337"
+            Description = "Return a pong and then updates it"
+            EventHandler = leetHandler
+            EventMatcher = leetMatcher
     }
-    |> withSlackCommand {
+
+let buttonCommand =
+    {
         Syntax = "button"
         Description = "Return a button"
         EventHandler = buttonHandler
         EventMatcher = buttonMatcher
     }
+
+let createFatSlackConfiguration appToken apiToken =
+    init
+    |> withApiToken apiToken
+    |> withAppToken appToken
+    |> withAlias "jarvis"
+    |> withSlackCommand leetCommand
+    |> withSlackCommand buttonCommand
     |> withSlashCommandSpec gcloudPubsub
     |> withHelpCommand
     |> withInteractiveSpecification interactiveSpecificationSample
