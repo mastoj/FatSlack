@@ -286,6 +286,10 @@ type ChatResponseMessage =
         Message: ChatMessage
     }
 
+type ApiResponse =
+    | OkResponse of ChatResponseMessage option
+    | FailResponse of exn
+
 type SlackRequest =
     | InteractiveMessage of InteractiveMessage
     | DialogSubmission of DialogSubmission
@@ -316,8 +320,8 @@ type SlackRequestError =
 type Event = ChatMessage
 type SlackApi = 
     {
-        Send: Message -> Async<ChatResponseMessage>
-        Respond: Url -> Message -> Async<ChatResponseMessage>
+        Send: Message -> Async<ApiResponse>
+        Respond: Url -> Message -> Async<ApiResponse>
     }
 type EventHandler = SlackApi -> Event -> unit
 type EventMatcher = CommandText -> Event -> bool

@@ -18,9 +18,12 @@ let leetHandler : EventHandler =
             printfn "==> Ponging: %A" pongMessage
             let! response = slackApi.Send (PostMessage pongMessage)
             do! Async.Sleep 3000
-            let updateMessage = { response.Message with Text = "Updated Pong 1337"; Channel = response.Channel}
-            printfn "==> Updating: %A" updateMessage
-            do! slackApi.Send (UpdateMessage updateMessage) |> Async.Ignore
+            match response with
+            | OkResponse (Some response) ->
+                let updateMessage = { response.Message with Text = "Updated Pong 1337"; Channel = response.Channel}
+                printfn "==> Updating: %A" updateMessage
+                do! slackApi.Send (UpdateMessage updateMessage) |> Async.Ignore
+            | x -> printfn "Unexpected response: %A" x
         } |> Async.RunSynchronously
 
 let leetMatcher : EventMatcher =

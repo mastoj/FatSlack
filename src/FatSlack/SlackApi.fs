@@ -9,11 +9,19 @@ let sendMessage url token (data: obj) =
         let jsonPayload = (Http.JsonData payload)
         printfn "==> Posting: %A" jsonPayload
         let! response = Http.postJson [("Authorization", authorizationHeader)] url jsonPayload
-        return 
-            response
-            |> (fun x -> printfn "==> Raw response: %A" x; x)
-            |> Json.deserialize<ChatResponseMessage>
-            |> (fun x -> printfn "==> Deserialized: %A" x; x)
+        printfn "==> Raw response: %A" response
+        let result =
+            match response with
+            | "ok" -> OkResponse None
+            | str ->
+                try
+                    str
+                    |> Json.deserialize<ChatResponseMessage>
+                    |> Some
+                    |> OkResponse
+                with
+                | exn -> ApiResponse.FailResponse exn
+        return result
     }
 
 let createSlackApi token =
