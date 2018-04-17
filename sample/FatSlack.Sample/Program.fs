@@ -217,10 +217,9 @@ let main argv =
                 ]
         ]
 
-    printfn "Starting web server"
-    let cts = new CancellationTokenSource()
-    let _, server = startWebServerAsync cfg app
-    Async.Start(server, cts.Token)
-    printfn "Hello World from F#! %s" argv.[0]
-    System.Threading.Thread.Sleep(Int32.MaxValue)
+    try
+        printfn "Starting web server"
+        startWebServer cfg app
+    with
+    | exn -> printfn "Something went wrong: %A" exn
     0 // return an integer exit code
