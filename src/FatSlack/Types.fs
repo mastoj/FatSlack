@@ -159,7 +159,7 @@ type ChatMessage =
         [<JsonProperty("pinned_to")>]PinnedTo: ChannelId list
         Reactions: Reaction list
         Attachments: Attachment list
-        ResponseType: ResponseType
+        [<JsonProperty("response_type")>]ResponseType: ResponseType
     }
     with 
         static member defaultValue =
