@@ -48,6 +48,11 @@ module Attachment =
         { attachment with Color = color }
 
 [<RequireQualifiedAccess>]
+module Field =
+    let createShortField title value = { Short = true; Title = title; Value = value }
+    let createLongField title value = { Short = false; Title = title; Value = value }
+
+[<RequireQualifiedAccess>]
 module Action =
     let createAction action =
         match action with
