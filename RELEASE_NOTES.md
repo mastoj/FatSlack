@@ -1,3 +1,7 @@
+#### 0.1.4-beta - April 22 2018
+
+* Add withFields and withColor
+
 #### 0.1.3-beta - April 18 2018
 
 * Fix response type json name

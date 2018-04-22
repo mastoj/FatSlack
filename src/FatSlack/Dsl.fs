@@ -5,6 +5,13 @@ open Types
 module Types =
     type Action =
         | Button of name:string * text:string * value:string
+
+    type AttachmentColor =
+        | Good
+        | Warning
+        | Danger
+        | Hex of string
+
     type ResponseType =
         | InChannel
         | Ephemeral
@@ -30,6 +37,15 @@ module Attachment =
     let createAttachment = Attachment.defaultValue
     let withText value attachment : Attachment = { attachment with Text = value }
     let withActions value attachment : Attachment = { attachment with Actions = value }
+    let withFields value attachment : Attachment = { attachment with Fields = value }
+    let withColor value attachment : Attachment =
+        let color =
+            match value with
+            | Good -> "good"
+            | Warning -> "warning"
+            | Danger -> "danger"
+            | Hex s -> s
+        { attachment with Color = color }
 
 [<RequireQualifiedAccess>]
 module Action =
